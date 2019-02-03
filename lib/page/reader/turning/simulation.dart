@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'dart:math';
+import 'package:reader/page/reader/turning/page_turning.dart';
 
 enum _AnimType {
   LEFT,
@@ -9,10 +10,11 @@ enum _AnimType {
   RIGHT_BOTTOM,
 }
 
-class SimulationPageTurningPainter extends CustomPainter {
+class SimulationPageTurningPainter extends PageTurningPainter {
   Offset a, b, c, d, e, f, g, h, i, j, k;
   final Offset beginTouchPoint, touchPoint;
-  final Picture prevPage, currentPage, nextPage, prevPageReverse, currentPageReverse, background;
+  final Picture prevPage, currentPage, nextPage;
+  final Color background;
   final bool toPrev;
   Size size;
   Canvas canvas;
@@ -34,8 +36,6 @@ class SimulationPageTurningPainter extends CustomPainter {
     @required this.nextPage,
     @required this.toPrev,
     @required this.background,
-    @required this.prevPageReverse,
-    @required this.currentPageReverse,
   }) : assert(currentPage != null),
        assert(background != null);
 
@@ -211,7 +211,11 @@ class SimulationPageTurningPainter extends CustomPainter {
   void _drawPathA() {
     canvas.save();
     canvas.clipPath(_pathA);
-    toPrev ? canvas.drawPicture(prevPage) : canvas.drawPicture(currentPage);
+    if (!toPrev) {
+      canvas.drawPicture(currentPage);
+    } else if (prevPage != null) {
+      canvas.drawPicture(prevPage);
+    }
     canvas.restore();
   }
 
@@ -291,7 +295,12 @@ class SimulationPageTurningPainter extends CustomPainter {
       ..setValues(-(1 - 2 * sin0 * sin0), 2 * sin0 * cos0, 0, 2 * sin0 * cos0, 1 - 2 * sin0 * sin0, 0, 0, 0, 1.0);
     Matrix4 matrix = Matrix4.translationValues(e.dx, e.dy, 0)..setRotation(matrix3)..translate(-e.dx, -e.dy);
     canvas.transform(matrix.storage);
-    toPrev ? canvas.drawPicture(prevPageReverse) : canvas.drawPicture(currentPageReverse);
+    if (!toPrev) {
+      canvas.drawPicture(currentPage);
+    } else if (prevPage != null) {
+      canvas.drawPicture(prevPage);
+    }
+    canvas.drawColor(background.withOpacity(0.9), BlendMode.srcOver);
     canvas.restore();
   }
 
@@ -362,7 +371,11 @@ class SimulationPageTurningPainter extends CustomPainter {
   void _drawPathC() {
     canvas.save();
     canvas.clipPath(_pathC);
-    toPrev ? canvas.drawPicture(currentPage) : canvas.drawPicture(nextPage);
+    if (toPrev) {
+      canvas.drawPicture(currentPage);
+    } else if (nextPage != null) {
+      canvas.drawPicture(nextPage);
+    }
     canvas.restore();
   }
 
@@ -372,7 +385,7 @@ class SimulationPageTurningPainter extends CustomPainter {
     canvas = _canvas;
 
     if (beginTouchPoint == null || touchPoint == null) {
-      canvas.drawPicture(background);
+      canvas.drawColor(background, BlendMode.src);
       canvas.drawPicture(currentPage);
       return;
     }
@@ -381,7 +394,7 @@ class SimulationPageTurningPainter extends CustomPainter {
     _calcPath();
 
     canvas.clipPath(_pathAll);
-    canvas.drawPicture(background);
+    canvas.drawColor(background, BlendMode.src);
 
     _drawPathA();
     _drawShadow1();

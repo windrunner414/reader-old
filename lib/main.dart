@@ -71,11 +71,17 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    if (MediaQuery.of(context).size == Size.zero) {
+      print('return');
+      return Container();
+    }
     if (background == null) {
       PictureRecorder backgroundRecorder = PictureRecorder();
       Canvas canvas = Canvas(backgroundRecorder);
       canvas.drawColor(Colors.green, BlendMode.src);
       background = backgroundRecorder.endRecording();
+      print(MediaQuery.of(context).size);
+      print(MediaQueryData.fromWindow(window).size);
       PictureRecorder currentPageRecorder = PictureRecorder();
       canvas = Canvas(currentPageRecorder);
       TextPainter(

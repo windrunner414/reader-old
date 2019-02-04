@@ -36,8 +36,7 @@ class SimulationPageTurningPainter extends PageTurningPainter {
     @required this.nextPage,
     @required this.toPrev,
     @required this.background,
-  }) : assert(currentPage != null),
-       assert(background != null);
+  });
 
   Offset _calcPointA(Offset ap) {
     if (ap.dx <= 0) ap = Offset(0.1, ap.dy);
@@ -211,9 +210,9 @@ class SimulationPageTurningPainter extends PageTurningPainter {
   void _drawPathA() {
     canvas.save();
     canvas.clipPath(_pathA);
-    if (!toPrev) {
+    if (!toPrev && currentPage != null) {
       canvas.drawPicture(currentPage);
-    } else if (prevPage != null) {
+    } else if (toPrev && prevPage != null) {
       canvas.drawPicture(prevPage);
     }
     canvas.restore();
@@ -286,6 +285,7 @@ class SimulationPageTurningPainter extends PageTurningPainter {
   }
 
   void _drawPathD() {
+    if (background == null) return;
     canvas.save();
     canvas.clipPath(_pathD);
     double eh = sqrt((f.dx - e.dx) * (f.dx - e.dx) + (h.dy - f.dy) * (h.dy - f.dy));
@@ -295,9 +295,9 @@ class SimulationPageTurningPainter extends PageTurningPainter {
       ..setValues(-(1 - 2 * sin0 * sin0), 2 * sin0 * cos0, 0, 2 * sin0 * cos0, 1 - 2 * sin0 * sin0, 0, 0, 0, 1.0);
     Matrix4 matrix = Matrix4.translationValues(e.dx, e.dy, 0)..setRotation(matrix3)..translate(-e.dx, -e.dy);
     canvas.transform(matrix.storage);
-    if (!toPrev) {
+    if (!toPrev && currentPage != null) {
       canvas.drawPicture(currentPage);
-    } else if (prevPage != null) {
+    } else if (toPrev && prevPage != null) {
       canvas.drawPicture(prevPage);
     }
     canvas.drawColor(background.withOpacity(0.9), BlendMode.srcOver);
@@ -371,9 +371,9 @@ class SimulationPageTurningPainter extends PageTurningPainter {
   void _drawPathC() {
     canvas.save();
     canvas.clipPath(_pathC);
-    if (toPrev) {
+    if (toPrev && currentPage != null) {
       canvas.drawPicture(currentPage);
-    } else if (nextPage != null) {
+    } else if (!toPrev && nextPage != null) {
       canvas.drawPicture(nextPage);
     }
     canvas.restore();
@@ -385,8 +385,12 @@ class SimulationPageTurningPainter extends PageTurningPainter {
     canvas = _canvas;
 
     if (beginTouchPoint == null || touchPoint == null) {
-      canvas.drawColor(background, BlendMode.src);
-      canvas.drawPicture(currentPage);
+      if (background != null) {
+        canvas.drawColor(background, BlendMode.src);
+      }
+      if (currentPage != null) {
+        canvas.drawPicture(currentPage);
+      }
       return;
     }
 
@@ -394,7 +398,9 @@ class SimulationPageTurningPainter extends PageTurningPainter {
     _calcPath();
 
     canvas.clipPath(_pathAll);
-    canvas.drawColor(background, BlendMode.src);
+    if (background != null) {
+      canvas.drawColor(background, BlendMode.src);
+    }
 
     _drawPathA();
     _drawShadow1();

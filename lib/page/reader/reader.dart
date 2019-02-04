@@ -278,14 +278,16 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   }
 
   List<Picture> _getPages() {
-    if (_chapterPages[_currentChapter] == null) {
-      _getChapterPages();
-      return null;
+    if (!_loadError) {
+      if (_chapterPages[_currentChapter] == null) {
+        _getChapterPages();
+        return null;
+      }
     }
 
     _cacheChapters();
 
-    List<Picture> currentChapterPages = _chapterPages[_currentChapter];
+    List<Picture> currentChapterPages = _chapterPages[_currentChapter] ?? [null];
     List<Picture> returnPages = [];
 
     if (_currentPage == -1) {
@@ -335,6 +337,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     } else {
       --_currentPage;
     }
+    _loadError = false;
   }
 
   void _toPrevPage() {
@@ -345,12 +348,13 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   }
 
   void _actualToNext() {
-    if (_currentPage == _chapterPages[_currentChapter].length - 1) {
+    if (_currentPage == (_chapterPages[_currentChapter]?.length ?? 1) - 1) {
       _currentPage = 0;
       ++_currentChapter;
     } else {
       ++_currentPage;
     }
+    _loadError = false;
   }
 
   void _toNextPage() {
@@ -530,7 +534,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     }
 
     if (size == Size.zero
-        || _preferences == null || _loadError
+        || _preferences == null
         || (painter = _getPageTurningPainter()) == null) {
       children.add(Container(
         color: _preferences?.background,
@@ -555,7 +559,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
 
     }
 
-    if (_loadError) {
+    if (_loadError && !_inDrag) {
       children.add(Center(
         child: SizedBox(
           width: 200,

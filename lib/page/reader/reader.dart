@@ -80,9 +80,6 @@ class Reader extends StatefulWidget {
   final int bookId;
   final getChapterContentCallback getChapterContent;
   final getChapterListCallback getChapterList;
-  /// will preload preloadNum chapter and cache preloadNum chapter before current chapter
-  /// total has preloadNum * 2 + 1 chapter in memory
-  /// Recommended set to 1
   final int preloadNum;
 
   Reader({
@@ -102,8 +99,8 @@ class Reader extends StatefulWidget {
 }
 
 class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
-  ReaderPreferences _pref;
-  get pref => _pref;
+  ReaderPreferences _preferences;
+  ReaderPreferences get preferences => _preferences;
 
   bool _inDrag = false, _toPrev = false;
   Offset _beginPoint, _currentPoint, _touchStartPoint;
@@ -120,7 +117,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   int __currentChapter;
   int __currentPage;
 
-  get _currentPage => __currentPage;
+  int get _currentPage => __currentPage;
 
   @protected
   set _currentPage(int page) {
@@ -128,7 +125,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     _saveReadProgress();
   }
 
-  get _currentChapter => __currentChapter;
+  int get _currentChapter => __currentChapter;
 
   @protected
   set _currentChapter(int chapter) {
@@ -160,18 +157,18 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     return LocalStorage.setStringList('read_progress_${widget.bookId}', ['$_currentChapter', '$_currentPage']);
   }
 
-  void setPreferences(ReaderPreferences preferences) async {
+  Future<void> setPreferences(ReaderPreferences preferences) async {
     var prefJson = preferences.toJson();
-    var currPrefJson = _pref.toJson();
+    var currPrefJson = _preferences.toJson();
     prefJson.forEach((String k, v) {
       if (v != null) currPrefJson[k] = v;
     });
-    _pref = ReaderPreferences.fromJson(currPrefJson);
-    await LocalStorage.setString('reader_preferences', json.encode(_pref));
+    _preferences = ReaderPreferences.fromJson(currPrefJson);
+    await LocalStorage.setString('reader_preferences', json.encode(_preferences));
     setState(() => _reCalcPages());
   }
 
-  void _restoreState() async {
+  Future<void> _restoreState() async {
     _showLoading();
 
     List<String> progress = await LocalStorage.getStringList('read_progress_${widget.bookId}');
@@ -187,9 +184,9 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     // must set it at end, used to know whether restoreState is complete
     try {
       String readerPref = await LocalStorage.getString('reader_preferences');
-      _pref = ReaderPreferences.fromJson(json.decode(readerPref));
+      _preferences = ReaderPreferences.fromJson(json.decode(readerPref));
     } catch(_) {
-      _pref = ReaderPreferences.defaultPref;
+      _preferences = ReaderPreferences.defaultPref;
     }
 
     _hideLoading();
@@ -204,11 +201,11 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   List<Picture> _calcPages(String content) {
     return calcPages(
       content: content,
-      fontSize: _pref.fontSize,
-      fontWeight: _pref.fontWeight,
-      color: _pref.fontColor,
-      height: _pref.height,
-      paragraphHeight: _pref.paragraphHeight,
+      fontSize: _preferences.fontSize,
+      fontWeight: _preferences.fontWeight,
+      color: _preferences.fontColor,
+      height: _preferences.height,
+      paragraphHeight: _preferences.paragraphHeight,
       size: _size,
       padding: const EdgeInsets.fromLTRB(15, 30, 15, 30),
     );
@@ -252,7 +249,11 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   }
 
   Future<void> _cacheChapters() async {
-    int id = ++_cacheId;
+    if (_cacheId == _currentChapter) {
+      return;
+    }
+
+    int id = _cacheId = _currentChapter;
 
     int cacheStart = _currentChapter - widget.preloadNum;
     if (cacheStart < 0) cacheStart = 0;
@@ -322,7 +323,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
       prevPage: pages[0],
       currentPage: pages[1],
       nextPage: pages[2],
-      background: _pref.background,
+      background: _preferences.background,
       toPrev: _toPrev,
     );
   }
@@ -529,10 +530,10 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     }
 
     if (size == Size.zero
-        || _pref == null || _loadingError
+        || _preferences == null || _loadingError
         || (painter = _getPageTurningPainter()) == null) {
       children.add(Container(
-        color: _pref?.background,
+        color: _preferences?.background,
       ));
     } else {
       children.add(RepaintBoundary(

@@ -173,18 +173,26 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   }
 
   Future<void> setPreferences(ReaderPreferences pref) async {
-    var prefJson = pref.toJson();
-    var currPrefJson = _preferences.toJson();
-    prefJson.forEach((String k, v) {
-      if (v != null) currPrefJson[k] = v;
-    });
-    _preferences = ReaderPreferences.fromJson(currPrefJson);
-    await LocalStorage.setString('reader_preferences', json.encode(_preferences));
+    if (_preferences == null) {
+      _preferences = ReaderPreferences.defaultPref;
+    }
+
+    if (pref != null) {
+      var prefJson = pref.toJson();
+      var currPrefJson = _preferences.toJson();
+      prefJson.forEach((String k, v) {
+        if (v != null) currPrefJson[k] = v;
+      });
+      _preferences = ReaderPreferences.fromJson(currPrefJson);
+      await LocalStorage.setString('reader_preferences', json.encode(_preferences));
+    }
+
     if (_preferences.fullScreen) {
       SystemChrome.setEnabledSystemUIOverlays([]);
     } else {
       SystemChrome.setEnabledSystemUIOverlays(SystemUiOverlay.values);
     }
+
     setState(() => _reCalcPages());
   }
 
@@ -204,10 +212,9 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     // must set it at end, used to know whether restoreState is complete
     try {
       String readerPref = await LocalStorage.getString('reader_preferences');
-      _preferences = ReaderPreferences.defaultPref;
       setPreferences(ReaderPreferences.fromJson(json.decode(readerPref)));
     } catch(_) {
-      _preferences = ReaderPreferences.defaultPref;
+      setPreferences(null);
     }
 
     _hideLoading();

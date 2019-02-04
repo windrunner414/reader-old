@@ -6,6 +6,7 @@ import 'package:reader/page/reader/calc_pages.dart';
 import 'package:reader/utils/local_storage.dart';
 import 'dart:math';
 import 'dart:ui';
+import 'dart:convert';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
@@ -21,6 +22,57 @@ class Chapter {
        assert(id != null);
 }
 
+class ReaderPreferences {
+  int pageTurning;
+  Color background;
+  Color fontColor;
+  double fontSize;
+  FontWeight fontWeight;
+  double height;
+  int paragraphHeight;
+
+  static final ReaderPreferences defaultPref = ReaderPreferences(
+    pageTurning: 0,
+    background: Color.fromRGBO(213, 239, 210, 1),
+    fontColor: Colors.black87,
+    fontSize: 17,
+    fontWeight: FontWeight.normal,
+    height: 1.1,
+    paragraphHeight: 2,
+  );
+
+  ReaderPreferences({
+    this.pageTurning,
+    this.background,
+    this.fontColor,
+    this.fontSize,
+    this.fontWeight,
+    this.height,
+    this.paragraphHeight,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'pageTurning': pageTurning,
+      'background': background,
+      'fontColor': fontColor,
+      'fontSize': fontSize,
+      'fontWeight': fontWeight,
+      'height': height,
+      'paragraphHeight': paragraphHeight,
+    };
+  }
+
+  ReaderPreferences.fromJson(Map<String, dynamic> json) :
+    pageTurning = json['pageTurning'],
+    background = json['background'],
+    fontColor = json['fontColor'],
+    fontSize = json['fontSize'],
+    fontWeight = json['fontWeight'],
+    height = json['height'],
+    paragraphHeight = json['paragraphHeight'];
+}
+
 typedef getChapterContentCallback = Future<String> Function(int chapterId);
 typedef getChapterListCallback = Future<List<Chapter>> Function();
 
@@ -30,6 +82,7 @@ class Reader extends StatefulWidget {
   final getChapterListCallback getChapterList;
   /// will preload preloadNum chapter and cache preloadNum chapter before current chapter
   /// total has preloadNum * 2 + 1 chapter in memory
+  /// Recommended set to 1
   final int preloadNum;
 
   Reader({
@@ -37,7 +90,7 @@ class Reader extends StatefulWidget {
     @required this.bookId,
     @required this.getChapterContent,
     @required this.getChapterList,
-    this.preloadNum = 5,
+    this.preloadNum = 1,
   }) : assert(bookId != null),
        assert(getChapterContent != null),
        assert(getChapterList != null),
@@ -49,8 +102,8 @@ class Reader extends StatefulWidget {
 }
 
 class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
-  int _pageTurningId;
-  Color _background;
+  ReaderPreferences _pref;
+  get pref => _pref;
 
   bool _inDrag = false, _toPrev = false;
   Offset _beginPoint, _currentPoint, _touchStartPoint;
@@ -61,8 +114,9 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
 
   Size _size;
   bool _inLoading = false;
+  bool _loadingError = false;
 
-  List<Chapter> _chapterList;
+  Map<int, Chapter> _chapterList;
   int __currentChapter;
   int __currentPage;
 
@@ -83,6 +137,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   }
 
   Map<int, List<Picture>> _chapterPages = {};
+  Map<int, String> _chapterContents = {};
   int _cacheId = 0;
 
   void _showLoading() {
@@ -93,6 +148,10 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
 
   void _hideLoading([bool success = true]) {
     setState(() {
+      if (!success) {
+        Fluttertoast.showToast(msg: '加载失败');
+        _loadingError = true;
+      }
       _inLoading = false;
     });
   }
@@ -101,14 +160,19 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     return LocalStorage.setStringList('read_progress_${widget.bookId}', ['$_currentChapter', '$_currentPage']);
   }
 
-  void _saveState() async {
-
+  void setPreferences(ReaderPreferences preferences) async {
+    var prefJson = preferences.toJson();
+    var currPrefJson = _pref.toJson();
+    prefJson.forEach((String k, v) {
+      if (v != null) currPrefJson[k] = v;
+    });
+    _pref = ReaderPreferences.fromJson(currPrefJson);
+    await LocalStorage.setString('reader_preferences', json.encode(_pref));
+    setState(() => _reCalcPages());
   }
 
   void _restoreState() async {
     _showLoading();
-    _pageTurningId = 0;
-    _background = Color.fromRGBO(152, 251, 152, 1);
 
     List<String> progress = await LocalStorage.getStringList('read_progress_${widget.bookId}');
     if (progress?.length == 2) {
@@ -120,45 +184,70 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
       __currentPage = 0;
     }
 
+    // must set it at end, used to know whether restoreState is complete
+    try {
+      String readerPref = await LocalStorage.getString('reader_preferences');
+      _pref = ReaderPreferences.fromJson(json.decode(readerPref));
+    } catch(_) {
+      _pref = ReaderPreferences.defaultPref;
+    }
+
     _hideLoading();
+  }
+
+  void _reCalcPages() {
+    _chapterContents.forEach((int k, String v) {
+      _chapterPages[k] = _calcPages(v);
+    });
   }
 
   List<Picture> _calcPages(String content) {
     return calcPages(
       content: content,
-      fontSize: 16,
-      fontWeight: FontWeight.normal,
-      color: Colors.black,
-      height: 1.1,
-      paragraphHeight: 2,
+      fontSize: _pref.fontSize,
+      fontWeight: _pref.fontWeight,
+      color: _pref.fontColor,
+      height: _pref.height,
+      paragraphHeight: _pref.paragraphHeight,
       size: _size,
       padding: const EdgeInsets.fromLTRB(15, 30, 15, 30),
     );
   }
 
-  Future<bool> _getChapterList() async {
-    _chapterList = await widget.getChapterList();
-    return _chapterList != null;
+  Future<void> _getChapterList() async {
+    Map<int, Chapter> chapterList = (await widget.getChapterList())?.asMap();
+    if (chapterList != null && chapterList.length > 0) {
+      _chapterList = chapterList;
+    }
+
+    if (_chapterList != null) {
+      Future.delayed(Duration(minutes: 5))
+        .then((_) => _getChapterList());
+    }
   }
 
   Future<void> _getChapterPages() async {
     _showLoading();
-    int chapter = _currentChapter;
-
     if (_chapterList == null) {
-      if (!(await _getChapterList())) {
+      await _getChapterList();
+      if (_chapterList == null) {
         _hideLoading(false);
         return;
       }
     }
 
-    String content = await widget.getChapterContent(_chapterList[chapter].id);
-    if (content == null) {
+    if (_chapterList[_currentChapter] == null) {
+      _currentChapter = 0;
+    }
+
+    String content = await widget.getChapterContent(_chapterList[_currentChapter].id);
+    if (content == null || content.isEmpty) {
       _hideLoading(false);
       return;
     }
 
-    _chapterPages[chapter] = _calcPages(content);
+    _chapterContents[_currentChapter] = content;
+    _chapterPages[_currentChapter] = _calcPages(content);
     _hideLoading();
   }
 
@@ -172,6 +261,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
 
     _chapterPages.forEach((int k, List<Picture> v) {
       if (k < cacheStart || k > cacheEnd) {
+        _chapterContents.remove(k);
         _chapterPages.remove(k);
       }
     });
@@ -180,7 +270,8 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
       if (_chapterPages[i] != null) continue;
       String content = await widget.getChapterContent(_chapterList[i].id);
       if (_cacheId != id) return;
-      if (content == null || _chapterPages[i] != null) continue;
+      if (content == null || content.isEmpty || _chapterPages[i] != null) continue;
+      _chapterContents[i] = content;
       _chapterPages[i] = _calcPages(content);
     }
   }
@@ -198,6 +289,10 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
 
     if (_currentPage == -1) {
       _currentPage += currentChapterPages.length;
+    }
+
+    if (_currentPage < 0 || _currentPage >= currentChapterPages.length) {
+      _currentPage = 0;
     }
 
     if (_currentPage == 0) {
@@ -227,7 +322,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
       prevPage: pages[0],
       currentPage: pages[1],
       nextPage: pages[2],
-      background: _background,
+      background: _pref.background,
       toPrev: _toPrev,
     );
   }
@@ -424,14 +519,20 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   Widget build(BuildContext context) {
     List<Widget> children = [];
     Size size = MediaQuery.of(context).size;
-    _size = size;
     PageTurningPainter painter;
 
+    if (size != Size.zero && size != _size) {
+      _size = size;
+      _reCalcPages();
+    } else {
+      _size = size;
+    }
+
     if (size == Size.zero
-        || _background == null
+        || _pref == null || _loadingError
         || (painter = _getPageTurningPainter()) == null) {
       children.add(Container(
-        color: _background,
+        color: _pref?.background,
       ));
     } else {
       children.add(RepaintBoundary(
@@ -444,6 +545,36 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
             isComplex: true,
             willChange: _inDrag,
             painter: painter,
+          ),
+        ),
+      ));
+    }
+
+    if (_chapterList != null && _chapterList[_currentChapter] != null) {
+
+    }
+
+    if (_loadingError) {
+      children.add(Center(
+        child: SizedBox(
+          width: 200,
+          height: 30,
+          child: RawMaterialButton(
+            child: Text('重新加载'),
+            elevation: 0,
+            highlightElevation: 0,
+            fillColor: Color.fromRGBO(30, 140, 255, 1),
+            highlightColor: Color.fromRGBO(20, 120, 255, 1),
+            splashColor: Colors.transparent,
+            textStyle: TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+            ),
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+            onPressed: () {
+              setState(() => _loadingError = false);
+            },
           ),
         ),
       ));

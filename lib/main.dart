@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:reader/page/reader/reader.dart';
+import 'dart:math';
 
 void main() {
   runApp(MyApp());
@@ -39,6 +40,9 @@ class _MyHomePageState extends State<MyHomePage> {
       getChapterContent: (int id) async {
         if (id == 1) {
           await Future.delayed(Duration(seconds: 3));
+          return '';
+          return null;
+          if (Random(DateTime.now().millisecondsSinceEpoch).nextInt(5) >= 3) return null;
           return '''“斗之力，三段！”
     望着测验魔石碑上面闪亮得甚至有些刺眼的五个大字，少年面无表情，唇角有着一抹自嘲，紧握的手掌，因为大力，而导致略微尖锐的指甲深深的刺进了掌心之，带来一阵阵钻心的疼痛…
     “萧炎，斗之力，三段！级别：低级！”测验魔石碑之旁，一位年男，看了一眼碑上所显示出来的信息，语气漠然的将之公布了出来…

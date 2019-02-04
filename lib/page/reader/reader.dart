@@ -556,7 +556,10 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     }
 
     if (_chapterList != null && _chapterList[_currentChapter] != null) {
-
+      children.add(Positioned(
+        top: ,
+        child: ,
+      ));
     }
 
     if (_loadError && !_inDrag) {

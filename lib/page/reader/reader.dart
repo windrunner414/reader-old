@@ -98,7 +98,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   }
 
   Future<bool> _saveReadProgress() async {
-    return LocalStorage.setString('read_progress_${widget.bookId}', '$_currentChapter|$_currentPage');
+    return LocalStorage.setStringList('read_progress_${widget.bookId}', ['$_currentChapter', '$_currentPage']);
   }
 
   void _saveState() async {
@@ -110,17 +110,14 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     _pageTurningId = 0;
     _background = Color.fromRGBO(152, 251, 152, 1);
 
-    // don't use setter, don't save it
-    __currentChapter = 0;
-    __currentPage = 0;
-
-    String progress = await LocalStorage.getString('read_progress_${widget.bookId}');
-    if (progress != null) {
-      List<String> tmp = progress.split("|");
-      if (tmp.length == 2) {
-        __currentChapter = int.tryParse(tmp[0]) ?? 0;
-        __currentPage = int.tryParse(tmp[1]) ?? 0;
-      }
+    List<String> progress = await LocalStorage.getStringList('read_progress_${widget.bookId}');
+    if (progress?.length == 2) {
+      __currentChapter = int.tryParse(progress[0]) ?? 0;
+      __currentPage = int.tryParse(progress[1]) ?? 0;
+    } else {
+      // don't use setter, don't save it
+      __currentChapter = 0;
+      __currentPage = 0;
     }
 
     _hideLoading();

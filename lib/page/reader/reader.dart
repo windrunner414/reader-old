@@ -647,9 +647,11 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
                   children: <Widget>[
                     Icon(Icons.battery_std, size: 22, color: _preferences.fontColor.withOpacity(0.6)),
                     Positioned(
+                      top: 5,
+                      left: 7.5,
                       child: Container(
-                        width: 20,
-                        height: 20 * (100 - _batteryLevel) / 100,
+                        width: 7,
+                        height: 12.5 * (100 - _batteryLevel) / 100,
                         color: _preferences.background,
                       ),
                     ),

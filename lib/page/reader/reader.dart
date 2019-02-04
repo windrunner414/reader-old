@@ -203,7 +203,8 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     // must set it at end, used to know whether restoreState is complete
     try {
       String readerPref = await LocalStorage.getString('reader_preferences');
-      _preferences = ReaderPreferences.fromJson(json.decode(readerPref));
+      _preferences = ReaderPreferences.defaultPref;
+      setPreferences(ReaderPreferences.fromJson(json.decode(readerPref)));
     } catch(_) {
       _preferences = ReaderPreferences.defaultPref;
     }
@@ -547,13 +548,9 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   @override
   void initState() {
     super.initState();
+    _now = DateTime.now();
     _ticker = createTicker(_onTick);
-    _restoreState().then((_) {
-      if (_preferences.fullScreen) {
-        SystemChrome.setEnabledSystemUIOverlays([]);
-      }
-    });
-    _now = DateTime.now(); // init _now
+    _restoreState();
     _minuteTimer();
   }
 

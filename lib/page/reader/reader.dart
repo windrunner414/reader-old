@@ -4,12 +4,14 @@ import 'package:reader/page/reader/turning/page_turning.dart';
 import 'package:reader/page/reader/turning/simulation.dart';
 import 'package:reader/page/reader/calc_pages.dart';
 import 'package:reader/utils/local_storage.dart';
+import 'package:reader/utils/time.dart';
 import 'dart:math';
 import 'dart:ui';
 import 'dart:convert';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:battery/battery.dart';
 
 class Chapter {
   String title;
@@ -30,6 +32,7 @@ class ReaderPreferences {
   FontWeight fontWeight;
   double height;
   int paragraphHeight;
+  bool fullScreen;
 
   static final ReaderPreferences defaultPref = ReaderPreferences(
     pageTurning: 0,
@@ -39,6 +42,7 @@ class ReaderPreferences {
     fontWeight: FontWeight.normal,
     height: 1.1,
     paragraphHeight: 2,
+    fullScreen: false,
   );
 
   ReaderPreferences({
@@ -49,6 +53,7 @@ class ReaderPreferences {
     this.fontWeight,
     this.height,
     this.paragraphHeight,
+    this.fullScreen,
   });
 
   Map<String, dynamic> toJson() {
@@ -60,6 +65,7 @@ class ReaderPreferences {
       'fontWeight': fontWeight,
       'height': height,
       'paragraphHeight': paragraphHeight,
+      'fullScreen': fullScreen,
     };
   }
 
@@ -70,7 +76,8 @@ class ReaderPreferences {
     fontSize = json['fontSize'],
     fontWeight = json['fontWeight'],
     height = json['height'],
-    paragraphHeight = json['paragraphHeight'];
+    paragraphHeight = json['paragraphHeight'],
+    fullScreen = json['fullScreen'];
 }
 
 typedef getChapterContentCallback = Future<String> Function(int chapterId);
@@ -137,6 +144,13 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   Map<int, String> _chapterContents = {};
   int _cacheId = -1;
 
+  EdgeInsets get _safeArea {
+    MediaQueryData m = MediaQueryData.fromWindow(window);
+    return _preferences.fullScreen ? m.padding : EdgeInsets.zero;
+  }
+  int _batteryLevel = 100;
+  DateTime _now;
+
   void _showLoading() {
     setState(() {
       _inLoading = true;
@@ -165,6 +179,11 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     });
     _preferences = ReaderPreferences.fromJson(currPrefJson);
     await LocalStorage.setString('reader_preferences', json.encode(_preferences));
+    if (_preferences.fullScreen) {
+      SystemChrome.setEnabledSystemUIOverlays([]);
+    } else {
+      SystemChrome.setEnabledSystemUIOverlays(SystemUiOverlay.values);
+    }
     setState(() => _reCalcPages());
   }
 
@@ -199,6 +218,8 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   }
 
   List<Picture> _calcPages(String content) {
+    EdgeInsets safeArea = _safeArea;
+
     return calcPages(
       content: content,
       fontSize: _preferences.fontSize,
@@ -207,7 +228,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
       height: _preferences.height,
       paragraphHeight: _preferences.paragraphHeight,
       size: _size,
-      padding: const EdgeInsets.fromLTRB(15, 30, 15, 30),
+      padding: (const EdgeInsets.fromLTRB(15, 30, 15, 30)).add(safeArea),
     );
   }
 
@@ -512,12 +533,156 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     _touchStartPoint = details.globalPosition;
   }
 
+  void _minuteTimer() async {
+    while (true) {
+      _batteryLevel = await Battery().batteryLevel;
+      _now = DateTime.now();
+      setState(() {});
+
+      int ms = 1000 - _now.millisecond;
+      await Future.delayed(Duration(milliseconds: ms));
+    }
+  }
+
   @override
   void initState() {
     super.initState();
-    SystemChrome.setEnabledSystemUIOverlays([]);
     _ticker = createTicker(_onTick);
-    _restoreState();
+    _restoreState().then((_) {
+      if (_preferences.fullScreen) {
+        SystemChrome.setEnabledSystemUIOverlays([]);
+      }
+    });
+    _now = DateTime.now(); // init _now
+    _minuteTimer();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    if (_preferences.fullScreen) {
+      SystemChrome.setEnabledSystemUIOverlays(SystemUiOverlay.values);
+    }
+  }
+
+  Widget _reloadWidget() {
+    return Center(
+      child: SizedBox(
+        width: 200,
+        height: 30,
+        child: RawMaterialButton(
+          child: Text('重新加载'),
+          elevation: 0,
+          highlightElevation: 0,
+          fillColor: Color.fromRGBO(30, 140, 255, 1),
+          highlightColor: Color.fromRGBO(20, 120, 255, 1),
+          splashColor: Colors.transparent,
+          textStyle: TextStyle(
+            color: Colors.white,
+            fontSize: 12,
+          ),
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          onPressed: () {
+            setState(() => _loadError = false);
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _loadingWidget() {
+    return Container(
+      color: Colors.transparent,
+      child: Center(
+        child: SizedBox(
+          width: 80,
+          height: 80,
+          child: Container(
+            decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.85),
+                borderRadius: BorderRadius.circular(5)
+            ),
+            child: SpinKitFadingCircle(
+              color: Colors.white70,
+              size: 40,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _topWidget() {
+    EdgeInsets safeArea = _safeArea;
+
+    return Positioned(
+      top: safeArea.top + 10,
+      left: safeArea.left + 15,
+      right: safeArea.right + 15,
+      child: Text(
+        _chapterList[_currentChapter].title,
+        style: TextStyle(
+          color: _preferences.fontColor.withOpacity(0.6),
+          fontSize: 12,
+          decoration: TextDecoration.none,
+          fontWeight: FontWeight.normal,
+        ),
+      ),
+    );
+  }
+
+  Widget _bottomWidget() {
+    var safeArea = _safeArea;
+
+    return Positioned(
+      bottom: safeArea.bottom + 10,
+      left: safeArea.left + 15,
+      right: safeArea.right + 15,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              RotatedBox(
+                quarterTurns: 1,
+                child: Stack(
+                  children: <Widget>[
+                    Icon(Icons.battery_std, size: 22, color: _preferences.fontColor.withOpacity(0.6)),
+                    Positioned(
+                      child: Container(
+                        width: 20,
+                        height: 20 * (100 - _batteryLevel) / 100,
+                        color: _preferences.background,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(width: 5),
+              Text(
+                '${Time.twoDigits(_now.hour)}:${Time.twoDigits(_now.minute)}',
+                style: TextStyle(
+                  color: _preferences.fontColor.withOpacity(0.6),
+                  fontSize: 12,
+                  fontWeight: FontWeight.normal,
+                  decoration: TextDecoration.none,
+                ),
+              ),
+            ],
+          ),
+          Text(
+            '第${_currentPage > 0 ? _currentPage + 1 : 1}/${_chapterPages[_currentChapter]?.length ?? 1}页',
+            style: TextStyle(
+              color: _preferences.fontColor.withOpacity(0.6),
+              fontSize: 12,
+              fontWeight: FontWeight.normal,
+              decoration: TextDecoration.none,
+            ),
+          )
+        ],
+      ),
+    );
   }
 
   @override
@@ -556,58 +721,17 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     }
 
     if (_chapterList != null && _chapterList[_currentChapter] != null) {
-      children.add(Positioned(
-        top: ,
-        child: ,
-      ));
+      children.add(_topWidget());
     }
 
+    children.add(_bottomWidget());
+
     if (_loadError && !_inDrag) {
-      children.add(Center(
-        child: SizedBox(
-          width: 200,
-          height: 30,
-          child: RawMaterialButton(
-            child: Text('重新加载'),
-            elevation: 0,
-            highlightElevation: 0,
-            fillColor: Color.fromRGBO(30, 140, 255, 1),
-            highlightColor: Color.fromRGBO(20, 120, 255, 1),
-            splashColor: Colors.transparent,
-            textStyle: TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-            ),
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-            onPressed: () {
-              setState(() => _loadError = false);
-            },
-          ),
-        ),
-      ));
+      children.add(_reloadWidget());
     }
 
     if (_inLoading) {
-      children.add(Container(
-        color: Colors.transparent,
-        child: Center(
-          child: SizedBox(
-            width: 80,
-            height: 80,
-            child: Container(
-              decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.85),
-                  borderRadius: BorderRadius.circular(5)
-              ),
-              child: SpinKitFadingCircle(
-                color: Colors.white70,
-                size: 40,
-              ),
-            ),
-          ),
-        ),
-      ));
+      children.add(_loadingWidget());
     }
 
     return Stack(

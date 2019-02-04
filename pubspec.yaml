@@ -18,6 +18,7 @@ dependencies:
   shared_preferences: ^0.5.0
   fluttertoast: ^2.2.11
   flutter_spinkit: ^3.1.0
+  battery: ^0.3.0
 
 dev_dependencies:
   flutter_test:

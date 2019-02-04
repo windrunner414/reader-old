@@ -40,9 +40,9 @@ class ReaderPreferences {
     fontColor: Colors.black87,
     fontSize: 17,
     fontWeight: FontWeight.normal,
-    height: 1.1,
-    paragraphHeight: 2,
-    fullScreen: false,
+    height: 1.15,
+    paragraphHeight: 1,
+    fullScreen: true,
   );
 
   ReaderPreferences({
@@ -145,8 +145,9 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   int _cacheId = -1;
 
   EdgeInsets get _safeArea {
-    MediaQueryData m = MediaQueryData.fromWindow(window);
-    return _preferences.fullScreen ? m.padding : EdgeInsets.zero;
+    return (_preferences?.fullScreen ?? false)
+      ? EdgeInsets.zero
+      : MediaQueryData.fromWindow(window).padding;
   }
   int _batteryLevel = 100;
   DateTime _now;
@@ -219,8 +220,6 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   }
 
   List<Picture> _calcPages(String content) {
-    EdgeInsets safeArea = _safeArea;
-
     return calcPages(
       content: content,
       fontSize: _preferences.fontSize,
@@ -229,7 +228,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
       height: _preferences.height,
       paragraphHeight: _preferences.paragraphHeight,
       size: _size,
-      padding: (const EdgeInsets.fromLTRB(15, 30, 15, 30)).add(safeArea),
+      padding: (const EdgeInsets.fromLTRB(15, 30, 15, 30)).add(_safeArea),
     );
   }
 
@@ -717,13 +716,13 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
           ),
         ),
       ));
-    }
 
-    if (_chapterList != null && _chapterList[_currentChapter] != null) {
-      children.add(_topWidget());
-    }
+      if (_chapterList != null && _chapterList[_currentChapter] != null) {
+        children.add(_topWidget());
+      }
 
-    children.add(_bottomWidget());
+      children.add(_bottomWidget());
+    }
 
     if (_loadError && !_inDrag) {
       children.add(_reloadWidget());

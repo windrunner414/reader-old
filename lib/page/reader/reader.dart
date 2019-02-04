@@ -111,7 +111,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
 
   Size _size;
   bool _inLoading = false;
-  bool _loadingError = false;
+  bool _loadError = false;
 
   Map<int, Chapter> _chapterList;
   int __currentChapter;
@@ -135,7 +135,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
 
   Map<int, List<Picture>> _chapterPages = {};
   Map<int, String> _chapterContents = {};
-  int _cacheId = 0;
+  int _cacheId = -1;
 
   void _showLoading() {
     setState(() {
@@ -147,7 +147,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     setState(() {
       if (!success) {
         Fluttertoast.showToast(msg: '加载失败');
-        _loadingError = true;
+        _loadError = true;
       }
       _inLoading = false;
     });
@@ -157,8 +157,8 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     return LocalStorage.setStringList('read_progress_${widget.bookId}', ['$_currentChapter', '$_currentPage']);
   }
 
-  Future<void> setPreferences(ReaderPreferences preferences) async {
-    var prefJson = preferences.toJson();
+  Future<void> setPreferences(ReaderPreferences pref) async {
+    var prefJson = pref.toJson();
     var currPrefJson = _preferences.toJson();
     prefJson.forEach((String k, v) {
       if (v != null) currPrefJson[k] = v;
@@ -530,7 +530,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     }
 
     if (size == Size.zero
-        || _preferences == null || _loadingError
+        || _preferences == null || _loadError
         || (painter = _getPageTurningPainter()) == null) {
       children.add(Container(
         color: _preferences?.background,
@@ -555,7 +555,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
 
     }
 
-    if (_loadingError) {
+    if (_loadError) {
       children.add(Center(
         child: SizedBox(
           width: 200,
@@ -574,7 +574,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
             onPressed: () {
-              setState(() => _loadingError = false);
+              setState(() => _loadError = false);
             },
           ),
         ),

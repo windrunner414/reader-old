@@ -573,8 +573,8 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   Widget _reloadWidget() {
     return Center(
       child: SizedBox(
-        width: 200,
-        height: 30,
+        width: 240,
+        height: 40,
         child: RawMaterialButton(
           child: Text('重新加载'),
           elevation: 0,
@@ -584,10 +584,10 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
           splashColor: Colors.transparent,
           textStyle: TextStyle(
             color: Colors.white,
-            fontSize: 12,
+            fontSize: 14,
           ),
           materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
           onPressed: () {
             setState(() => _loadError = false);
           },

@@ -252,6 +252,8 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   }
 
   Future<void> _getChapterPages() async {
+    if (_inLoading) return;
+
     _showLoading();
     if (_chapterList == null) {
       await _getChapterList();

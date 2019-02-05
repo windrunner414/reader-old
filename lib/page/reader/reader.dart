@@ -118,6 +118,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   Size _size;
   bool _inLoading = false;
   bool _loadError = false;
+  bool _showToolBar = false;
 
   Map<int, Chapter> _chapterList;
   int __currentChapter;
@@ -502,7 +503,12 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
         _inDrag = true;
         _toPrevPage();
       } else if (dx >= _size.width / 3 && dx < _size.width * 2 / 3) {
-        // display other widgets
+        _showToolBar = !_showToolBar;
+        if (_showToolBar && _preferences.fullScreen) {
+          SystemChrome.setEnabledSystemUIOverlays(SystemUiOverlay.values);
+        } else if (!_showToolBar && _preferences.fullScreen) {
+          SystemChrome.setEnabledSystemUIOverlays([]);
+        }
       } else {
         _toPrev = false;
         if (!_canTurningPage()) {
@@ -688,8 +694,23 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     );
   }
 
+  Widget _iconButton({
+    @required IconData icon,
+    double size = 24,
+    Color color = const Color.fromRGBO(51, 153, 255, 1),
+    @required VoidCallback onPressed,
+  }) {
+    return GestureDetector(
+      onTap: onPressed,
+      child: Icon(
+        icon,
+        size: size,
+        color: color,
+      ),
+    );
+  }
+
   Widget _toolBarTopWidget() {
-    Color fColor = Color.fromRGBO(51, 153, 255, 1);
     EdgeInsets safeArea = _safeArea;
 
     return Positioned(
@@ -698,16 +719,47 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
       right: safeArea.right,
       child: Container(
         color: Colors.white,
-        padding: const EdgeInsets.fromLTRB(15, 5, 15, 5),
+        padding: const EdgeInsets.fromLTRB(8, 10, 15, 10),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: <Widget>[
-            GestureDetector(
-              child: Icon(
-                ReaderIcon.back,
-                size: 50,
-                color: fColor,
-              ),
+            Row(
+              children: <Widget>[
+                _iconButton(
+                  icon: ReaderIcon.back,
+                  size: 26,
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                ),
+                SizedBox(width: 5),
+                Text(
+                  widget.bookName,
+                  style: TextStyle(
+                    color: const Color.fromRGBO(51, 153, 255, 1),
+                    decoration: TextDecoration.none,
+                    fontSize: 16,
+                    fontWeight: FontWeight.normal,
+                  ),
+                ),
+              ],
+            ),
+            Row(
+              children: <Widget>[
+                _iconButton(
+                  icon: ReaderIcon.download,
+                  onPressed: () {
+
+                  },
+                ),
+                SizedBox(width: 15),
+                _iconButton(
+                  icon: ReaderIcon.info,
+                  onPressed: () {
+
+                  },
+                ),
+              ],
             ),
           ],
         ),
@@ -762,7 +814,9 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
       children.add(_reloadWidget());
     }
 
-    children.add(_toolBarTopWidget());
+    if (_showToolBar) {
+      children.add(_toolBarTopWidget());
+    }
 
     if (_inLoading) {
       children.add(_loadingWidget());

@@ -294,7 +294,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     });
 
     for (int i = cacheStart; i <= cacheEnd; ++i) {
-      if (_chapterPages[i] != null) continue;
+      if (i >= _chapterList.length || _chapterPages[i] != null) continue;
       String content = await widget.getChapterContent(_chapterList[i].id);
       if (_cacheId != id) return;
       if (content == null || content.isEmpty || _chapterPages[i] != null) continue;

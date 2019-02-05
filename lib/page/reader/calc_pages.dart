@@ -33,11 +33,9 @@ List<Picture> calcPages({
   @required FontWeight fontWeight,
   @required Color color,
   @required double height,
-  @required int paragraphHeight,
   @required Size size,
   @required EdgeInsets padding,
 }) {
-  content = content.replaceAll("\n", "\n" * paragraphHeight);
   TextStyle style = TextStyle(
     fontSize: fontSize,
     fontFamily: fontFamily,

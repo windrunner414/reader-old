@@ -31,7 +31,6 @@ class ReaderPreferences {
   double fontSize;
   FontWeight fontWeight;
   double height;
-  int paragraphHeight;
   bool fullScreen;
 
   static final ReaderPreferences defaultPref = ReaderPreferences(
@@ -41,7 +40,6 @@ class ReaderPreferences {
     fontSize: 17,
     fontWeight: FontWeight.normal,
     height: 1.15,
-    paragraphHeight: 1,
     fullScreen: true,
   );
 
@@ -52,7 +50,6 @@ class ReaderPreferences {
     this.fontSize,
     this.fontWeight,
     this.height,
-    this.paragraphHeight,
     this.fullScreen,
   });
 
@@ -64,7 +61,6 @@ class ReaderPreferences {
       'fontSize': fontSize,
       'fontWeight': fontWeight,
       'height': height,
-      'paragraphHeight': paragraphHeight,
       'fullScreen': fullScreen,
     };
   }
@@ -76,7 +72,6 @@ class ReaderPreferences {
     fontSize = json['fontSize'],
     fontWeight = json['fontWeight'],
     height = json['height'],
-    paragraphHeight = json['paragraphHeight'],
     fullScreen = json['fullScreen'];
 }
 
@@ -144,13 +139,8 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   Map<int, String> _chapterContents = {};
   int _cacheId = -1;
 
-  EdgeInsets get _safeArea {
-    return (_preferences?.fullScreen ?? false)
-      ? EdgeInsets.zero
-      : MediaQueryData.fromWindow(window).padding;
-  }
+  EdgeInsets get _safeArea => EdgeInsets.fromWindowPadding(window.padding, window.devicePixelRatio);
   int _batteryLevel = 100;
-  DateTime _now;
 
   void _showLoading() {
     setState(() {
@@ -222,6 +212,13 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
 
   void _reCalcPages() {
     _chapterContents.forEach((int k, String v) {
+      if (k == _currentChapter) {
+        int totalPage = _chapterPages[k].length;
+        _chapterPages[k] = _calcPages(v);
+        _currentPage = (_currentPage / totalPage * _chapterPages[k].length).round();
+        return;
+      }
+
       _chapterPages[k] = _calcPages(v);
     });
   }
@@ -233,7 +230,6 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
       fontWeight: _preferences.fontWeight,
       color: _preferences.fontColor,
       height: _preferences.height,
-      paragraphHeight: _preferences.paragraphHeight,
       size: _size,
       padding: (const EdgeInsets.fromLTRB(15, 30, 15, 30)).add(_safeArea),
     );
@@ -542,24 +538,20 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     _touchStartPoint = details.globalPosition;
   }
 
-  void _minuteTimer() async {
+  void _timer() async {
     while (true) {
       _batteryLevel = await Battery().batteryLevel;
-      _now = DateTime.now();
       setState(() {});
-
-      int ms = 1000 - _now.millisecond;
-      await Future.delayed(Duration(milliseconds: ms));
+      await Future.delayed(Duration(seconds: 10));
     }
   }
 
   @override
   void initState() {
     super.initState();
-    _now = DateTime.now();
     _ticker = createTicker(_onTick);
     _restoreState();
-    _minuteTimer();
+    _timer();
   }
 
   @override
@@ -668,7 +660,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
               ),
               SizedBox(width: 5),
               Text(
-                '${Time.twoDigits(_now.hour)}:${Time.twoDigits(_now.minute)}',
+                Time.hourMinute,
                 style: TextStyle(
                   color: _preferences.fontColor.withOpacity(0.6),
                   fontSize: 12,
@@ -725,11 +717,13 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
           ),
         ),
       ));
+    }
 
-      if (_chapterList != null && _chapterList[_currentChapter] != null) {
-        children.add(_topWidget());
-      }
+    if (_chapterList != null && _chapterList[_currentChapter] != null) {
+      children.add(_topWidget());
+    }
 
+    if (_preferences != null) {
       children.add(_bottomWidget());
     }
 

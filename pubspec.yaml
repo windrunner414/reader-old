@@ -66,3 +66,7 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.io/custom-fonts/#from-packages
+  fonts:
+    - family: Reader Icon
+      fonts:
+        - asset: resource/font/reader.ttf

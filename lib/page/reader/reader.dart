@@ -3,6 +3,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:reader/page/reader/turning/page_turning.dart';
 import 'package:reader/page/reader/turning/simulation.dart';
 import 'package:reader/page/reader/calc_pages.dart';
+import 'package:reader/page/reader/reader_icon.dart';
 import 'package:reader/utils/local_storage.dart';
 import 'package:reader/utils/time.dart';
 import 'dart:math';
@@ -80,6 +81,7 @@ typedef getChapterListCallback = Future<List<Chapter>> Function();
 
 class Reader extends StatefulWidget {
   final int bookId;
+  final String bookName;
   final getChapterContentCallback getChapterContent;
   final getChapterListCallback getChapterList;
   final int preloadNum;
@@ -87,10 +89,12 @@ class Reader extends StatefulWidget {
   Reader({
     Key key,
     @required this.bookId,
+    @required this.bookName,
     @required this.getChapterContent,
     @required this.getChapterList,
     this.preloadNum = 1,
   }) : assert(bookId != null),
+       assert(bookName != null),
        assert(getChapterContent != null),
        assert(getChapterList != null),
        assert(preloadNum != null && preloadNum >= 0),
@@ -684,6 +688,33 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     );
   }
 
+  Widget _toolBarTopWidget() {
+    Color fColor = Color.fromRGBO(51, 153, 255, 1);
+    EdgeInsets safeArea = _safeArea;
+
+    return Positioned(
+      top: safeArea.top,
+      left: safeArea.left,
+      right: safeArea.right,
+      child: Container(
+        color: Colors.white,
+        padding: const EdgeInsets.fromLTRB(15, 5, 15, 5),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: <Widget>[
+            GestureDetector(
+              child: Icon(
+                ReaderIcon.back,
+                size: 50,
+                color: fColor,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     List<Widget> children = [];
@@ -730,6 +761,8 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     if (_loadError && !_inDrag) {
       children.add(_reloadWidget());
     }
+
+    children.add(_toolBarTopWidget());
 
     if (_inLoading) {
       children.add(_loadingWidget());

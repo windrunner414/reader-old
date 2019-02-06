@@ -415,7 +415,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   }
 
   void _onTick(Duration duration) {
-    int animDurationMs = 200;
+    int animDurationMs = 300;
     if (duration.inMilliseconds >= animDurationMs || _animDistance == 0) {
       _ticker.stop();
       setState(() {
@@ -542,13 +542,13 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
 
   void _onPanStart(DragStartDetails details) {
     if (_ticker.isActive) {
-      _onTick(Duration(milliseconds: 300)); // stop
+      _onTick(Duration(milliseconds: 3000)); // stop
     }
 
     _touchStartPoint = details.globalPosition;
   }
 
-  void _timer() async {
+  Future<void> _timer() async {
     while (true) {
       _batteryLevel = await Battery().batteryLevel;
       setState(() {});
@@ -719,7 +719,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
       right: safeArea.right,
       child: Container(
         color: Colors.white,
-        padding: const EdgeInsets.fromLTRB(8, 10, 15, 10),
+        padding: const EdgeInsets.fromLTRB(8, 11, 15, 11),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: <Widget>[
@@ -738,7 +738,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
                   style: TextStyle(
                     color: const Color.fromRGBO(51, 153, 255, 1),
                     decoration: TextDecoration.none,
-                    fontSize: 16,
+                    fontSize: 17,
                     fontWeight: FontWeight.normal,
                   ),
                 ),

@@ -16,7 +16,7 @@ import 'package:battery/battery.dart';
 
 class Chapter {
   String title;
-  int id;
+  String id;
 
   Chapter({
     @required this.title,
@@ -34,6 +34,9 @@ class ReaderPreferences {
   double height;
   bool fullScreen;
   bool nightMode;
+
+  Color get realBackground => nightMode ? Colors.black : background;
+  Color get realFontColor => nightMode ? Colors.white70 : fontColor;
 
   static final ReaderPreferences defaultPref = ReaderPreferences(
     pageTurning: 0,
@@ -57,31 +60,29 @@ class ReaderPreferences {
     this.nightMode,
   });
 
-  Map<String, dynamic> toJson() {
-    return {
-      'pageTurning': pageTurning,
-      'background': background,
-      'fontColor': fontColor,
-      'fontSize': fontSize,
-      'fontWeight': fontWeight,
-      'height': height,
-      'fullScreen': fullScreen,
-      'nightMode': nightMode,
-    };
-  }
+  Map<String, dynamic> toJson() => {
+    'pageTurning': pageTurning,
+    'background': background?.value,
+    'fontColor': fontColor?.value,
+    'fontSize': fontSize,
+    'fontWeight': fontWeight?.index,
+    'height': height,
+    'fullScreen': fullScreen,
+    'nightMode': nightMode,
+  };
 
   ReaderPreferences.fromJson(Map<String, dynamic> json) :
     pageTurning = json['pageTurning'],
-    background = json['background'],
-    fontColor = json['fontColor'],
+    background = json['background'] != null ? Color(json['background']) : null,
+    fontColor = json['fontColor'] != null ? Color(json['fontColor']) : null,
     fontSize = json['fontSize'],
-    fontWeight = json['fontWeight'],
+    fontWeight = json['fontWeight'] != null ? FontWeight.values[json['fontWeight']] : null,
     height = json['height'],
     fullScreen = json['fullScreen'],
     nightMode = json['nightMode'];
 }
 
-typedef getChapterContentCallback = Future<String> Function(int chapterId);
+typedef getChapterContentCallback = Future<String> Function(String chapterId);
 typedef getChapterListCallback = Future<List<Chapter>> Function();
 typedef downloadCallback = Future<void> Function(List<Chapter> downloadChapterList);
 
@@ -191,10 +192,12 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
       await LocalStorage.setString('reader_preferences', json.encode(_preferences));
     }
 
-    if (_preferences.fullScreen) {
-      SystemChrome.setEnabledSystemUIOverlays([]);
-    } else {
-      SystemChrome.setEnabledSystemUIOverlays(SystemUiOverlay.values);
+    if (!_showToolBar) {
+      if (_preferences.fullScreen) {
+        SystemChrome.setEnabledSystemUIOverlays([]);
+      } else {
+        SystemChrome.setEnabledSystemUIOverlays(SystemUiOverlay.values);
+      }
     }
 
     setState(() => _reCalcPages());
@@ -242,7 +245,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
       content: content,
       fontSize: _preferences.fontSize,
       fontWeight: _preferences.fontWeight,
-      color: _preferences.fontColor,
+      color: _preferences.realFontColor,
       height: _preferences.height,
       size: _size,
       padding: (const EdgeInsets.fromLTRB(15, 30, 15, 30)).add(_safeArea),
@@ -365,7 +368,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
       prevPage: pages[0],
       currentPage: pages[1],
       nextPage: pages[2],
-      background: _preferences.background,
+      background: _preferences.realBackground,
       toPrev: _toPrev,
     );
   }
@@ -639,7 +642,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
       child: Text(
         _chapterList[_currentChapter].title,
         style: TextStyle(
-          color: _preferences.fontColor.withOpacity(0.6),
+          color: _preferences.realFontColor.withOpacity(0.6),
           fontSize: 12,
           decoration: TextDecoration.none,
           fontWeight: FontWeight.normal,
@@ -664,14 +667,18 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
                 quarterTurns: 1,
                 child: Stack(
                   children: <Widget>[
-                    Icon(Icons.battery_std, size: 22, color: _preferences.fontColor.withOpacity(0.6)),
+                    Icon(
+                      Icons.battery_std,
+                      size: 22,
+                      color: _preferences.realFontColor.withOpacity(0.6),
+                    ),
                     Positioned(
                       top: 5,
                       left: 7.5,
                       child: Container(
                         width: 7,
                         height: 12.5 * (100 - _batteryLevel) / 100,
-                        color: _preferences.background,
+                        color: _preferences.realBackground,
                       ),
                     ),
                   ],
@@ -681,7 +688,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
               Text(
                 Time.hourMinute,
                 style: TextStyle(
-                  color: _preferences.fontColor.withOpacity(0.6),
+                  color: _preferences.realFontColor.withOpacity(0.6),
                   fontSize: 12,
                   fontWeight: FontWeight.normal,
                   decoration: TextDecoration.none,
@@ -692,7 +699,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
           Text(
             '第${_currentPage > 0 ? _currentPage + 1 : 1}/${_chapterPages[_currentChapter]?.length ?? 1}页',
             style: TextStyle(
-              color: _preferences.fontColor.withOpacity(0.6),
+              color: _preferences.realFontColor.withOpacity(0.6),
               fontSize: 12,
               fontWeight: FontWeight.normal,
               decoration: TextDecoration.none,
@@ -803,9 +810,9 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     var safeArea = _safeArea;
 
     return Positioned(
-      bottom: _safeArea.bottom,
-      left: _safeArea.left,
-      right: _safeArea.right,
+      bottom: safeArea.bottom,
+      left: safeArea.left,
+      right: safeArea.right,
       child: Container(
         color: Colors.white,
         padding: const EdgeInsets.fromLTRB(0, 8, 0, 8),
@@ -820,12 +827,20 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
 
               },
             ),
-            _iconButton(
+            _preferences.nightMode
+            ? _iconButton(
+              icon: ReaderIcon.sun,
+              text: '日间模式',
+              onPressed: () {
+                setPreferences(ReaderPreferences(nightMode: false));
+              },
+            )
+            : _iconButton(
               icon: ReaderIcon.moon,
               size: 21,
               text: '夜间模式',
               onPressed: () {
-
+                setPreferences(ReaderPreferences(nightMode: true));
               },
             ),
             _iconButton(
@@ -865,7 +880,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
         || _preferences == null
         || (painter = _getPageTurningPainter()) == null) {
       children.add(Container(
-        color: _preferences?.background,
+        color: _preferences?.realBackground,
       ));
     } else {
       children.add(RepaintBoundary(

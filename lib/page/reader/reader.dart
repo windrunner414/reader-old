@@ -302,12 +302,16 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     int cacheEnd = _currentChapter + widget.preloadNum;
     if (cacheEnd >= _chapterList.length) cacheEnd = _chapterList.length - 1;
 
+    List<int> toRemove = [];
     _chapterPages.forEach((int k, List<Picture> v) {
       if (k < cacheStart || k > cacheEnd) {
-        _chapterContents.remove(k);
-        _chapterPages.remove(k);
+        toRemove.add(k);
       }
     });
+    for (int k in toRemove) {
+      _chapterContents.remove(k);
+      _chapterPages.remove(k);
+    }
 
     for (int i = cacheStart; i <= cacheEnd; ++i) {
       if (i >= _chapterList.length || _chapterPages[i] != null) continue;

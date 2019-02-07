@@ -33,6 +33,7 @@ class ReaderPreferences {
   FontWeight fontWeight;
   double height;
   bool fullScreen;
+  bool nightMode;
 
   static final ReaderPreferences defaultPref = ReaderPreferences(
     pageTurning: 0,
@@ -42,6 +43,7 @@ class ReaderPreferences {
     fontWeight: FontWeight.normal,
     height: 1.15,
     fullScreen: true,
+    nightMode: false,
   );
 
   ReaderPreferences({
@@ -52,6 +54,7 @@ class ReaderPreferences {
     this.fontWeight,
     this.height,
     this.fullScreen,
+    this.nightMode,
   });
 
   Map<String, dynamic> toJson() {
@@ -63,6 +66,7 @@ class ReaderPreferences {
       'fontWeight': fontWeight,
       'height': height,
       'fullScreen': fullScreen,
+      'nightMode': nightMode,
     };
   }
 
@@ -73,17 +77,20 @@ class ReaderPreferences {
     fontSize = json['fontSize'],
     fontWeight = json['fontWeight'],
     height = json['height'],
-    fullScreen = json['fullScreen'];
+    fullScreen = json['fullScreen'],
+    nightMode = json['nightMode'];
 }
 
 typedef getChapterContentCallback = Future<String> Function(int chapterId);
 typedef getChapterListCallback = Future<List<Chapter>> Function();
+typedef downloadCallback = Future<void> Function(List<Chapter> downloadChapterList);
 
 class Reader extends StatefulWidget {
   final int bookId;
   final String bookName;
   final getChapterContentCallback getChapterContent;
   final getChapterListCallback getChapterList;
+  final downloadCallback onDownload;
   final int preloadNum;
 
   Reader({
@@ -92,11 +99,13 @@ class Reader extends StatefulWidget {
     @required this.bookName,
     @required this.getChapterContent,
     @required this.getChapterList,
+    @required this.onDownload,
     this.preloadNum = 1,
   }) : assert(bookId != null),
        assert(bookName != null),
        assert(getChapterContent != null),
        assert(getChapterList != null),
+       assert(onDownload != null),
        assert(preloadNum != null && preloadNum >= 0),
        super(key: key);
 
@@ -698,14 +707,37 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     @required IconData icon,
     double size = 24,
     Color color = const Color.fromRGBO(51, 153, 255, 1),
+    String text,
+    double fontSize = 12,
     @required VoidCallback onPressed,
   }) {
-    return GestureDetector(
+    return text == null ? GestureDetector(
       onTap: onPressed,
       child: Icon(
         icon,
         size: size,
         color: color,
+      ),
+    ) : GestureDetector(
+      onTap: onPressed,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: <Widget>[
+          Icon(
+            icon,
+            size: size,
+            color: color,
+          ),
+          Text(
+            text,
+            style: TextStyle(
+              fontSize: fontSize,
+              color: color,
+              decoration: TextDecoration.none,
+              fontWeight: FontWeight.normal,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -767,6 +799,55 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     );
   }
 
+  Widget _toolBarBottomWidget() {
+    var safeArea = _safeArea;
+
+    return Positioned(
+      bottom: _safeArea.bottom,
+      left: _safeArea.left,
+      right: _safeArea.right,
+      child: Container(
+        color: Colors.white,
+        padding: const EdgeInsets.fromLTRB(0, 8, 0, 8),
+        height: 58,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: <Widget>[
+            _iconButton(
+              icon: ReaderIcon.catalogue,
+              text: '目录',
+              onPressed: () {
+
+              },
+            ),
+            _iconButton(
+              icon: ReaderIcon.moon,
+              size: 21,
+              text: '夜间模式',
+              onPressed: () {
+
+              },
+            ),
+            _iconButton(
+              icon: ReaderIcon.setting,
+              text: '设置',
+              onPressed: () {
+
+              },
+            ),
+            _iconButton(
+              icon: ReaderIcon.progress,
+              text: '进度',
+              onPressed: () {
+
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     List<Widget> children = [];
@@ -816,6 +897,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
 
     if (_showToolBar) {
       children.add(_toolBarTopWidget());
+      children.add(_toolBarBottomWidget());
     }
 
     if (_inLoading) {

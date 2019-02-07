@@ -38,6 +38,7 @@ class _MyHomePageState extends State<MyHomePage> {
     return Reader(
       bookId: 1,
       bookName: '斗破苍穹',
+      onDownload: (List<Chapter> c){},
       getChapterContent: (int id) async {
         if (id == 1) {
           await Future.delayed(Duration(seconds: 3));

@@ -167,6 +167,7 @@ class _MyHomePageState extends State<MyHomePage> {
         }
       },
       getChapterList: () async {
+        await Future.delayed(Duration(milliseconds: 1000));
         return [
           Chapter(title: '第一章 陨落的天才', id: '1'),
           Chapter(title: '第二章 斗气大陆', id: '2'),

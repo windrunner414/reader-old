@@ -114,6 +114,8 @@ class Reader extends StatefulWidget {
   _ReaderState createState() => _ReaderState();
 }
 
+typedef _layerBuilder = Widget Function();
+
 class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   ReaderPreferences _preferences;
   ReaderPreferences get preferences => _preferences;
@@ -121,9 +123,9 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   bool _inDrag = false, _toPrev = false;
   Offset _beginPoint, _currentPoint, _touchStartPoint;
 
-  Ticker _ticker;
+  Ticker _ticker; // ticker for page turning animation.
   double _animDistance;
-  double _animDistance2; // y distance, only in cancel animation
+  double _animDistance2;
 
   Size _size;
   bool _inLoading = false;
@@ -156,6 +158,8 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
 
   EdgeInsets get _safeArea => EdgeInsets.fromWindowPadding(window.padding, window.devicePixelRatio);
   int _batteryLevel = 100;
+
+  List<_layerBuilder> _layer = [];
 
   void _showLoading() {
     setState(() {
@@ -256,11 +260,6 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     Map<int, Chapter> chapterList = (await widget.getChapterList())?.asMap();
     if (chapterList != null && chapterList.length > 0) {
       _chapterList = chapterList;
-    }
-
-    if (_chapterList != null) {
-      Future.delayed(Duration(minutes: 5))
-        .then((_) => _getChapterList());
     }
   }
 
@@ -426,6 +425,12 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     _ticker.start();
   }
 
+  void _toChapter(int chapter) {
+    _currentChapter = chapter;
+    _currentPage = 0;
+    _loadError = false;
+  }
+
   void _onTick(Duration duration) {
     int animDurationMs = 300;
     if (duration.inMilliseconds >= animDurationMs || _animDistance == 0) {
@@ -515,12 +520,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
         _inDrag = true;
         _toPrevPage();
       } else if (dx >= _size.width / 3 && dx < _size.width * 2 / 3) {
-        _showToolBar = !_showToolBar;
-        if (_showToolBar && _preferences.fullScreen) {
-          SystemChrome.setEnabledSystemUIOverlays(SystemUiOverlay.values);
-        } else if (!_showToolBar && _preferences.fullScreen) {
-          SystemChrome.setEnabledSystemUIOverlays([]);
-        }
+        _toggleToolBar();
       } else {
         _toPrev = false;
         if (!_canTurningPage()) {
@@ -561,10 +561,12 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   }
 
   Future<void> _timer() async {
+    int times = 0;
     while (true) {
       _batteryLevel = await Battery().batteryLevel;
       setState(() {});
       await Future.delayed(Duration(seconds: 10));
+      if (++times % 30 == 0) _getChapterList();
     }
   }
 
@@ -581,6 +583,15 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     super.dispose();
     if (_preferences.fullScreen) {
       SystemChrome.setEnabledSystemUIOverlays(SystemUiOverlay.values);
+    }
+  }
+
+  void _toggleToolBar() {
+    _showToolBar = !_showToolBar;
+    if (_showToolBar && _preferences.fullScreen) {
+      SystemChrome.setEnabledSystemUIOverlays(SystemUiOverlay.values);
+    } else if (!_showToolBar && _preferences.fullScreen) {
+      SystemChrome.setEnabledSystemUIOverlays([]);
     }
   }
 
@@ -634,7 +645,6 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
 
   Widget _topWidget() {
     EdgeInsets safeArea = _safeArea;
-
     return Positioned(
       top: safeArea.top + 10,
       left: safeArea.left + 15,
@@ -647,13 +657,14 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
           decoration: TextDecoration.none,
           fontWeight: FontWeight.normal,
         ),
+        softWrap: false,
+        overflow: TextOverflow.ellipsis,
       ),
     );
   }
 
   Widget _bottomWidget() {
     var safeArea = _safeArea;
-
     return Positioned(
       bottom: safeArea.bottom + 10,
       left: safeArea.left + 15,
@@ -751,18 +762,18 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
 
   Widget _toolBarTopWidget() {
     EdgeInsets safeArea = _safeArea;
-
-    return Positioned(
-      top: safeArea.top,
-      left: safeArea.left,
-      right: safeArea.right,
-      child: Container(
-        color: Colors.white,
-        padding: const EdgeInsets.fromLTRB(8, 11, 15, 11),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: <Widget>[
-            Row(
+    return Container(
+      color: Colors.white,
+      padding: EdgeInsets.fromLTRB(
+        8 + safeArea.left,
+        11 + safeArea.top,
+        15 + safeArea.right,
+        11,
+      ),
+      child: Row(
+        children: <Widget>[
+          Expanded(
+            child: Row(
               children: <Widget>[
                 _iconButton(
                   icon: ReaderIcon.back,
@@ -772,50 +783,59 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
                   },
                 ),
                 SizedBox(width: 5),
-                Text(
-                  widget.bookName,
-                  style: TextStyle(
-                    color: const Color.fromRGBO(51, 153, 255, 1),
-                    decoration: TextDecoration.none,
-                    fontSize: 17,
-                    fontWeight: FontWeight.normal,
+                Expanded(
+                  child: Text(
+                    widget.bookName,
+                    style: TextStyle(
+                      color: const Color.fromRGBO(51, 153, 255, 1),
+                      decoration: TextDecoration.none,
+                      fontSize: 17,
+                      fontWeight: FontWeight.normal,
+                    ),
+                    softWrap: false,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-              ],
-            ),
-            Row(
-              children: <Widget>[
-                _iconButton(
-                  icon: ReaderIcon.download,
-                  onPressed: () {
-
-                  },
-                ),
                 SizedBox(width: 15),
-                _iconButton(
-                  icon: ReaderIcon.info,
-                  onPressed: () {
-
-                  },
-                ),
               ],
             ),
-          ],
-        ),
+          ),
+          Row(
+            children: <Widget>[
+              _iconButton(
+                icon: ReaderIcon.download,
+                onPressed: () {
+
+                },
+              ),
+              SizedBox(width: 15),
+              _iconButton(
+                icon: ReaderIcon.info,
+                onPressed: () {
+
+                },
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 
   Widget _toolBarBottomWidget() {
-    var safeArea = _safeArea;
-
+    EdgeInsets safeArea = _safeArea;
     return Positioned(
-      bottom: safeArea.bottom,
-      left: safeArea.left,
-      right: safeArea.right,
+      bottom: 0,
+      left: 0,
+      right: 0,
       child: Container(
         color: Colors.white,
-        padding: const EdgeInsets.fromLTRB(0, 8, 0, 8),
+        padding: EdgeInsets.fromLTRB(
+          safeArea.left,
+          8,
+          safeArea.right,
+          8 + safeArea.bottom,
+        ),
         height: 58,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -824,7 +844,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
               icon: ReaderIcon.catalogue,
               text: '目录',
               onPressed: () {
-
+                _showLayer(Duration(milliseconds: 250), _catalogueWidget);
               },
             ),
             _preferences.nightMode
@@ -863,6 +883,173 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     );
   }
 
+  Widget _maskWidget(Duration duration) {
+    return WillPopScope(
+      child: GestureDetector(
+        onPanStart: (DragStartDetails details) {
+          _closeLayer(duration);
+        },
+        child: Container(
+          width: _size.width,
+          height: _size.height,
+          color: Colors.transparent,
+        ),
+      ),
+      onWillPop: () {
+        _closeLayer(duration);
+        return Future.value(false);
+      },
+    );
+  }
+
+  TickerFuture _showLayer(Duration duration, _layerBuilder builder) {
+    if (_showToolBar) _toggleToolBar();
+
+    _layer = [builder, () => Container(
+      width: _size.width,
+      height: _size.height,
+      color: Colors.transparent,
+    )];
+
+    Ticker ticker;
+    ticker = createTicker((Duration d) {
+      setState(() {
+        if (d.inMilliseconds >= duration.inMilliseconds) {
+          _animDistance = 1;
+          _layer = [() => _maskWidget(duration), _layer[0]];
+          ticker.stop();
+        } else {
+          _animDistance = d.inMilliseconds / duration.inMilliseconds;
+        }
+      });
+    });
+
+    return ticker.start();
+  }
+
+  TickerFuture _closeLayer(Duration duration) {
+    setState(() {
+      _layer = [_layer[1], () => Container(
+        width: _size.width,
+        height: _size.height,
+        color: Colors.transparent,
+      )];
+    });
+    Ticker ticker;
+    ticker = createTicker((Duration d) {
+      setState(() {
+        if (d.inMilliseconds >= duration.inMilliseconds) {
+          _animDistance = 0;
+          _layer.clear();
+          ticker.stop();
+        } else {
+          _animDistance = 1 - d.inMilliseconds / duration.inMilliseconds;
+        }
+      });
+    });
+
+    return ticker.start();
+  }
+
+  Widget _catalogueWidget() {
+    double width = _size.width * 0.9;
+    return Positioned(
+      left: width * (_animDistance - 1),
+      child: Container(
+        width: width,
+        height: _size.height,
+        padding: EdgeInsets.only(right: -_safeArea.right).add(_safeArea),
+        color: Colors.white,
+        child: Column(
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(15, 15, 15, 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    widget.bookName,
+                    style: TextStyle(
+                      fontWeight: FontWeight.normal,
+                      fontSize: 18,
+                      decoration: TextDecoration.none,
+                      color: Colors.black87,
+                    ),
+                    softWrap: true,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  SizedBox(height: 15),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: <Widget>[
+                      Text(
+                        '目录',
+                        style: TextStyle(
+                          fontWeight: FontWeight.normal,
+                          fontSize: 15,
+                          decoration: TextDecoration.none,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      _iconButton(
+                        icon: Icons.refresh,
+                        size: 21,
+                        color: Colors.black54,
+                        onPressed: () async {
+                          _showLoading();
+                          await _getChapterList();
+                          _hideLoading();
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            Container(height: 0.5, color: Colors.black12),
+            Expanded(
+              child: Material(
+                color: Colors.transparent,
+                child: ListView.builder(
+                  itemCount: _chapterList.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    return FlatButton(
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      padding: const EdgeInsets.fromLTRB(15, 5, 15, 5),
+                      highlightColor: Colors.black12,
+                      splashColor: const Color.fromRGBO(0, 0, 0, 0.05),
+                      shape: Border(bottom: BorderSide(color: const Color.fromRGBO(245, 245, 245, 1), width: 0.5)),
+                      child: Row(
+                        children: <Widget>[
+                          Text(
+                            _chapterList[index].title,
+                            style: TextStyle(
+                              color: _currentChapter == index
+                                  ? const Color.fromRGBO(51, 153, 255, 1)
+                                  : (true ? const Color.fromRGBO(98, 106, 115, 1)
+                                  : const Color.fromRGBO(162, 171, 179, 1)),
+                              fontSize: 12,
+                            ),
+                            softWrap: true,
+                          ),
+                        ],
+                      ),
+                      onPressed: () {
+                        _toChapter(index);
+                        _closeLayer(Duration(milliseconds: 250));
+                      },
+                    );
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  
   @override
   Widget build(BuildContext context) {
     List<Widget> children = [];
@@ -914,6 +1101,8 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
       children.add(_toolBarTopWidget());
       children.add(_toolBarBottomWidget());
     }
+
+    _layer.forEach((_layerBuilder builder) => children.add(builder()));
 
     if (_inLoading) {
       children.add(_loadingWidget());

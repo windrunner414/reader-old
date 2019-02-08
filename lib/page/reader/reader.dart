@@ -976,12 +976,13 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
           children: <Widget>[
             Container(
               height: 85,
-              padding: const EdgeInsets.fromLTRB(15, 15, 15, 0),
+              padding: const EdgeInsets.fromLTRB(15, 10, 15, 5),
               decoration: BoxDecoration(
                 border: Border(bottom: BorderSide(color: Colors.black12, width: 1)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: <Widget>[
                   Text(
                     widget.bookName,
@@ -990,12 +991,12 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
                       fontSize: 18,
                       decoration: TextDecoration.none,
                       color: Colors.black87,
+                      height: 0.8,
                     ),
                     softWrap: true,
-                    maxLines: 3,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  SizedBox(height: 15),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: <Widget>[
@@ -1003,14 +1004,14 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
                         '目录',
                         style: TextStyle(
                           fontWeight: FontWeight.normal,
-                          fontSize: 15,
+                          fontSize: 16,
                           decoration: TextDecoration.none,
                           color: Colors.black87,
                         ),
                       ),
                       _iconButton(
                         icon: Icons.refresh,
-                        size: 21,
+                        size: 23,
                         color: Colors.black54,
                         onPressed: () async {
                           _showLoading();
@@ -1028,17 +1029,16 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
                 color: Colors.transparent,
                 child: ListView.builder(
                   controller: ScrollController(
-                    initialScrollOffset: (40.0 * _currentChapter).clamp(0, 40.0 * _chapterList.length - listViewHeight),
+                    initialScrollOffset: (50.0 * _currentChapter).clamp(0, 50.0 * _chapterList.length - listViewHeight),
                   ),
                   padding: EdgeInsets.zero,
-                  itemExtent: 40,
+                  itemExtent: 50,
                   itemCount: _chapterList.length,
                   itemBuilder: (BuildContext context, int index) {
                     return FlatButton(
                       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       highlightColor: const Color.fromRGBO(0, 0, 0, 0.1),
                       splashColor: const Color.fromRGBO(0, 0, 0, 0.03),
-                      shape: Border(bottom: BorderSide(color: const Color.fromRGBO(245, 245, 245, 1), width: 1)),
                       padding: const EdgeInsets.fromLTRB(15, 0, 15, 0),
                       child: Align(
                         alignment: Alignment.centerLeft,
@@ -1049,7 +1049,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
                                 ? const Color.fromRGBO(51, 153, 255, 1)
                                 : (true ? const Color.fromRGBO(98, 106, 115, 1)
                                 : const Color.fromRGBO(162, 171, 179, 1)),
-                            fontSize: 12,
+                            fontSize: 14,
                             height: 0.8,
                           ),
                           softWrap: true,

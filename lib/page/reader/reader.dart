@@ -130,7 +130,6 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   Size _size;
   bool _inLoading = false;
   bool _loadError = false;
-  bool _showToolBar = false;
 
   Map<int, Chapter> _chapterList;
   int __currentChapter;
@@ -196,9 +195,9 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
       await LocalStorage.setString('reader_preferences', json.encode(_preferences));
     }
 
-    if (!_showToolBar) {
+    if (_layer.isEmpty) {
       if (_preferences.fullScreen) {
-        SystemChrome.setEnabledSystemUIOverlays([]);
+        SystemChrome.setEnabledSystemUIOverlays([SystemUiOverlay.bottom]);
       } else {
         SystemChrome.setEnabledSystemUIOverlays(SystemUiOverlay.values);
       }
@@ -524,7 +523,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
         _inDrag = true;
         _toPrevPage();
       } else if (dx >= _size.width / 3 && dx < _size.width * 2 / 3) {
-        _toggleToolBar();
+        _showLayer(Duration(milliseconds: 100), _toolBarWidget);
       } else {
         _toPrev = false;
         if (!_canTurningPage()) {
@@ -587,15 +586,6 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     super.dispose();
     if (_preferences.fullScreen) {
       SystemChrome.setEnabledSystemUIOverlays(SystemUiOverlay.values);
-    }
-  }
-
-  void _toggleToolBar() {
-    _showToolBar = !_showToolBar;
-    if (_showToolBar && _preferences.fullScreen) {
-      SystemChrome.setEnabledSystemUIOverlays(SystemUiOverlay.values);
-    } else if (!_showToolBar && _preferences.fullScreen) {
-      SystemChrome.setEnabledSystemUIOverlays([]);
     }
   }
 
@@ -764,16 +754,30 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     );
   }
 
+  Widget _toolBarWidget() {
+    return Positioned(
+      top: (45 + _safeArea.top) * (_animDistance - 1),
+      bottom: (58 + _safeArea.bottom) * (_animDistance - 1),
+      left: 0,
+      right: 0,
+      child: Stack(
+        children: <Widget>[
+          _toolBarTopWidget(),
+          _toolBarBottomWidget(),
+        ],
+      ),
+    );
+  }
+
   Widget _toolBarTopWidget() {
     EdgeInsets safeArea = _safeArea;
     return Container(
       color: Colors.white,
       padding: EdgeInsets.fromLTRB(
-        8 + safeArea.left,
-        11 + safeArea.top,
-        15 + safeArea.right,
-        11,
+        8 + safeArea.left, safeArea.top,
+        15 + safeArea.right, 0,
       ),
+      height: 45 + safeArea.top,
       child: Row(
         children: <Widget>[
           Expanded(
@@ -840,7 +844,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
           safeArea.right,
           8 + safeArea.bottom,
         ),
-        height: 58,
+        height: 58 + safeArea.bottom,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: <Widget>[
@@ -907,7 +911,8 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   }
 
   TickerFuture _showLayer(Duration duration, _layerBuilder builder) {
-    if (_showToolBar) _toggleToolBar();
+    if (_ticker.isActive) _onTick(Duration(milliseconds: 3000));
+    if (_preferences.fullScreen) SystemChrome.setEnabledSystemUIOverlays(SystemUiOverlay.values);
 
     _layer = [builder, () => Container(
       width: _size.width,
@@ -932,6 +937,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   }
 
   TickerFuture _closeLayer(Duration duration) {
+    if (_preferences.fullScreen) SystemChrome.setEnabledSystemUIOverlays([SystemUiOverlay.bottom]);
     setState(() {
       _layer = [_layer[1], () => Container(
         width: _size.width,
@@ -1099,11 +1105,6 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
 
     if (_loadError && !_inDrag) {
       children.add(_reloadWidget());
-    }
-
-    if (_showToolBar) {
-      children.add(_toolBarTopWidget());
-      children.add(_toolBarBottomWidget());
     }
 
     _layer.forEach((_layerBuilder builder) => children.add(builder()));

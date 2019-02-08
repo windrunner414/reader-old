@@ -171,7 +171,7 @@ class _MyHomePageState extends State<MyHomePage> {
         List<Chapter> chapterList = [];
         for (var i = 0; i < 10000; ++i) {
           chapterList.addAll([
-            Chapter(title: '第一章 陨落的天才', id: '1'),
+            Chapter(title: '第一章 陨落的天才陨落的天才陨落的天才陨落的天才陨落的天才陨落的天才陨落的天才陨落的天才陨落的天才陨落的天才陨落的天才陨落的天才', id: '1'),
             Chapter(title: '第二章 斗气大陆', id: '2'),
           ]);
         }

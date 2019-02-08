@@ -460,6 +460,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   }
 
   bool _canTurningPage() {
+    if (_currentChapter < 0 || _currentChapter >= _chapterList.length) return true;
     if (_toPrev) {
       return _currentChapter > 0 || _currentPage > 0;
     } else {
@@ -937,7 +938,6 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   }
 
   TickerFuture _closeLayer(Duration duration) {
-    if (_preferences.fullScreen) SystemChrome.setEnabledSystemUIOverlays([SystemUiOverlay.bottom]);
     setState(() {
       _layer = [_layer[1], () => Container(
         width: _size.width,
@@ -951,6 +951,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
         if (d.inMilliseconds >= duration.inMilliseconds) {
           _animDistance = 0;
           _layer.clear();
+          if (_preferences.fullScreen) SystemChrome.setEnabledSystemUIOverlays([SystemUiOverlay.bottom]);
           ticker.stop();
         } else {
           _animDistance = 1 - d.inMilliseconds / duration.inMilliseconds;
@@ -963,6 +964,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
 
   Widget _catalogueWidget() {
     double width = _size.width * 0.9;
+    double listViewHeight = (_size.height - _safeArea.top - _safeArea.bottom - 85);
     return Positioned(
       left: width * (_animDistance - 1),
       child: Container(
@@ -972,8 +974,12 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
         color: Colors.white,
         child: Column(
           children: <Widget>[
-            Padding(
-              padding: const EdgeInsets.fromLTRB(15, 15, 15, 8),
+            Container(
+              height: 85,
+              padding: const EdgeInsets.fromLTRB(15, 15, 15, 0),
+              decoration: BoxDecoration(
+                border: Border(bottom: BorderSide(color: Colors.black12, width: 1)),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
@@ -1017,34 +1023,39 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
                 ],
               ),
             ),
-            Container(height: 0.5, color: Colors.black12),
             Expanded(
               child: Material(
                 color: Colors.transparent,
                 child: ListView.builder(
-                  controller: ScrollController(initialScrollOffset: _currentChapter.toDouble()),
+                  controller: ScrollController(
+                    initialScrollOffset: (40.0 * _currentChapter).clamp(0, 40.0 * _chapterList.length - listViewHeight),
+                  ),
+                  padding: EdgeInsets.zero,
+                  itemExtent: 40,
                   itemCount: _chapterList.length,
                   itemBuilder: (BuildContext context, int index) {
                     return FlatButton(
                       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      padding: const EdgeInsets.fromLTRB(15, 5, 15, 5),
-                      highlightColor: Colors.black12,
-                      splashColor: const Color.fromRGBO(0, 0, 0, 0.05),
+                      highlightColor: const Color.fromRGBO(0, 0, 0, 0.1),
+                      splashColor: const Color.fromRGBO(0, 0, 0, 0.03),
                       shape: Border(bottom: BorderSide(color: const Color.fromRGBO(245, 245, 245, 1), width: 1)),
-                      child: Row(
-                        children: <Widget>[
-                          Text(
-                            _chapterList[index].title,
-                            style: TextStyle(
-                              color: _currentChapter == index
-                                  ? const Color.fromRGBO(51, 153, 255, 1)
-                                  : (true ? const Color.fromRGBO(98, 106, 115, 1)
-                                  : const Color.fromRGBO(162, 171, 179, 1)),
-                              fontSize: 12,
-                            ),
-                            softWrap: true,
+                      padding: const EdgeInsets.fromLTRB(15, 0, 15, 0),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          _chapterList[index].title,
+                          style: TextStyle(
+                            color: _currentChapter == index
+                                ? const Color.fromRGBO(51, 153, 255, 1)
+                                : (true ? const Color.fromRGBO(98, 106, 115, 1)
+                                : const Color.fromRGBO(162, 171, 179, 1)),
+                            fontSize: 12,
+                            height: 0.8,
                           ),
-                        ],
+                          softWrap: true,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                       onPressed: () {
                         _toChapter(index);

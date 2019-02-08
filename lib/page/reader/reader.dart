@@ -1022,6 +1022,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
               child: Material(
                 color: Colors.transparent,
                 child: ListView.builder(
+                  controller: ScrollController(initialScrollOffset: _currentChapter.toDouble()),
                   itemCount: _chapterList.length,
                   itemBuilder: (BuildContext context, int index) {
                     return FlatButton(
@@ -1029,7 +1030,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
                       padding: const EdgeInsets.fromLTRB(15, 5, 15, 5),
                       highlightColor: Colors.black12,
                       splashColor: const Color.fromRGBO(0, 0, 0, 0.05),
-                      shape: Border(bottom: BorderSide(color: const Color.fromRGBO(245, 245, 245, 1), width: 0.5)),
+                      shape: Border(bottom: BorderSide(color: const Color.fromRGBO(245, 245, 245, 1), width: 1)),
                       child: Row(
                         children: <Widget>[
                           Text(

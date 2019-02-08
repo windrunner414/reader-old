@@ -169,7 +169,7 @@ class _MyHomePageState extends State<MyHomePage> {
       getChapterList: () async {
         await Future.delayed(Duration(milliseconds: 1000));
         List<Chapter> chapterList = [];
-        for (var i = 0; i < 1000; ++i) {
+        for (var i = 0; i < 10000; ++i) {
           chapterList.addAll([
             Chapter(title: '第一章 陨落的天才', id: '1'),
             Chapter(title: '第二章 斗气大陆', id: '2'),

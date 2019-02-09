@@ -960,6 +960,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   TickerFuture _showLayer(Duration duration, _layerBuilder builder) {
     if (_ticker.isActive) _onTick(Duration(milliseconds: 3000));
     if (_preferences.fullScreen) SystemChrome.setEnabledSystemUIOverlays(SystemUiOverlay.values);
+    _animDistance = 0;
 
     _layer = [
       () => _maskWidget(duration),

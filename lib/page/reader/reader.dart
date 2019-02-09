@@ -131,7 +131,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   bool _inLoading = false;
   bool _loadError = false;
 
-  Map<int, Chapter> _chapterList;
+  List<Chapter> _chapterList;
   int __currentChapter;
   int __currentPage;
 
@@ -258,7 +258,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   }
 
   Future<void> _getChapterList() async {
-    Map<int, Chapter> chapterList = (await widget.getChapterList())?.asMap();
+    List<Chapter> chapterList = await widget.getChapterList();
     if (chapterList != null && chapterList.length > 0) {
       _chapterList = chapterList;
     }
@@ -276,7 +276,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
       }
     }
 
-    if (_chapterList[_currentChapter] == null) {
+    if (_currentChapter < 0 || _currentChapter >= _chapterList.length) {
       _currentChapter = 0;
     }
 
@@ -1150,7 +1150,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
       ));
     }
 
-    if (_chapterList != null && _chapterList[_currentChapter] != null) {
+    if (_chapterList != null && _currentChapter >= 0 && _currentChapter < _chapterList.length) {
       children.add(_topWidget());
     }
 

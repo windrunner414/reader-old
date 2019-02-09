@@ -85,6 +85,7 @@ class ReaderPreferences {
 typedef getChapterContentCallback = Future<String> Function(String chapterId);
 typedef getChapterListCallback = Future<List<Chapter>> Function();
 typedef downloadCallback = Future<void> Function(List<Chapter> downloadChapterList);
+typedef isCachedCallback = bool Function(String chapterId);
 
 class Reader extends StatefulWidget {
   final int bookId;
@@ -92,6 +93,8 @@ class Reader extends StatefulWidget {
   final getChapterContentCallback getChapterContent;
   final getChapterListCallback getChapterList;
   final downloadCallback onDownload;
+  final isCachedCallback isCached;
+  final WillPopCallback onWillPop;
   final int preloadNum;
 
   Reader({
@@ -101,13 +104,17 @@ class Reader extends StatefulWidget {
     @required this.getChapterContent,
     @required this.getChapterList,
     @required this.onDownload,
+    @required this.isCached,
+    @required this.onWillPop,
     this.preloadNum = 1,
   }) : assert(bookId != null),
        assert(bookName != null),
        assert(getChapterContent != null),
        assert(getChapterList != null),
        assert(onDownload != null),
+       assert(isCached != null),
        assert(preloadNum != null && preloadNum >= 0),
+       assert(onWillPop != null),
        super(key: key);
 
   @override
@@ -572,24 +579,30 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
       _batteryLevel = await Battery().batteryLevel;
       setState(() {});
       await Future.delayed(Duration(seconds: 10));
+      if (!mounted) return; // stop timer after dispose
       if (++times % 30 == 0) _getChapterList();
     }
   }
 
   @override
+  void setState(VoidCallback fn) {
+    if (mounted) super.setState(fn);
+  }
+
+  @override
   void initState() {
-    super.initState();
     _ticker = createTicker(_onTick);
     _restoreState();
     _timer();
+    super.initState();
   }
 
   @override
   void dispose() {
-    super.dispose();
     if (_preferences.fullScreen) {
       SystemChrome.setEnabledSystemUIOverlays(SystemUiOverlay.values);
     }
+    super.dispose();
   }
 
   Widget _reloadWidget() {
@@ -620,7 +633,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
 
   Widget _loadingWidget() {
     return Container(
-      color: Colors.transparent,
+      decoration: BoxDecoration(),
       child: Center(
         child: SizedBox(
           width: 80,
@@ -728,31 +741,37 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   }) {
     return text == null ? GestureDetector(
       onTap: onPressed,
-      child: Icon(
-        icon,
-        size: size,
-        color: color,
+      child: DecoratedBox(
+        decoration: BoxDecoration(),
+        child: Icon(
+          icon,
+          size: size,
+          color: color,
+        ),
       ),
     ) : GestureDetector(
       onTap: onPressed,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: <Widget>[
-          Icon(
-            icon,
-            size: size,
-            color: color,
-          ),
-          Text(
-            text,
-            style: TextStyle(
-              fontSize: fontSize,
+      child: DecoratedBox(
+        decoration: BoxDecoration(),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: <Widget>[
+            Icon(
+              icon,
+              size: size,
               color: color,
-              decoration: TextDecoration.none,
-              fontWeight: FontWeight.normal,
             ),
-          ),
-        ],
+            Text(
+              text,
+              style: TextStyle(
+                fontSize: fontSize,
+                color: color,
+                decoration: TextDecoration.none,
+                fontWeight: FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -789,8 +808,8 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
                 _iconButton(
                   icon: ReaderIcon.back,
                   size: 26,
-                  onPressed: () {
-                    Navigator.pop(context);
+                  onPressed: () async {
+                    if (await widget.onWillPop()) Navigator.pop(context);
                   },
                 ),
                 SizedBox(width: 5),
@@ -903,7 +922,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
         child: Container(
           width: _size.width,
           height: _size.height,
-          color: Colors.transparent,
+          decoration: BoxDecoration(),
         ),
       ),
       onWillPop: () {
@@ -923,7 +942,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
       () => Container(
         width: _size.width,
         height: _size.height,
-        color: Colors.transparent,
+        decoration: BoxDecoration(),
       ),
     ];
 
@@ -948,7 +967,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
       _layer.add(() => Container(
         width: _size.width,
         height: _size.height,
-        color: Colors.transparent,
+        decoration: BoxDecoration(),
       ));
     });
     Ticker ticker;
@@ -1067,8 +1086,9 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
                               style: TextStyle(
                                 color: _currentChapter == index
                                     ? const Color.fromRGBO(51, 153, 255, 1)
-                                    : (true ? const Color.fromRGBO(98, 106, 115, 1)
-                                    : const Color.fromRGBO(162, 171, 179, 1)),
+                                    : (widget.isCached(_chapterList[index].id)
+                                      ? const Color.fromRGBO(98, 106, 115, 1)
+                                      : const Color.fromRGBO(162, 171, 179, 1)),
                                 fontSize: 14,
                                 height: 0.8,
                               ),
@@ -1168,8 +1188,11 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
       children.add(_loadingWidget());
     }
 
-    return Stack(
-      children: children,
+    return WillPopScope(
+      onWillPop: widget.onWillPop,
+      child: Stack(
+        children: children,
+      ),
     );
   }
 }

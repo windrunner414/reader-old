@@ -35,6 +35,14 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    return Scaffold(
+      body: FlatButton(onPressed: () {
+        Navigator.push(context, PageRouteBuilder(pageBuilder: _buildReaderPage));
+      }, child: Text('打开阅读器')),
+    );
+  }
+
+  Widget _buildReaderPage(BuildContext context, anim, anim2) {
     return Reader(
       bookId: 1,
       bookName: '斗破苍穹',
@@ -176,6 +184,14 @@ class _MyHomePageState extends State<MyHomePage> {
           ]);
         }
         return chapterList;
+      },
+      isCached: (String id) {
+        if (id == '1') return true;
+        return false;
+      },
+      onWillPop: () {
+        print('pop');
+        return Future.value(true);
       },
     );
   }

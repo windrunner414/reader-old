@@ -160,6 +160,8 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
 
   List<_layerBuilder> _layer = [];
 
+  ScrollController _chapterListScrollController = ScrollController();
+
   void _showLoading() {
     setState(() {
       _inLoading = true;
@@ -915,18 +917,22 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     if (_ticker.isActive) _onTick(Duration(milliseconds: 3000));
     if (_preferences.fullScreen) SystemChrome.setEnabledSystemUIOverlays(SystemUiOverlay.values);
 
-    _layer = [builder, () => Container(
-      width: _size.width,
-      height: _size.height,
-      color: Colors.transparent,
-    )];
+    _layer = [
+      () => _maskWidget(duration),
+      builder,
+      () => Container(
+        width: _size.width,
+        height: _size.height,
+        color: Colors.transparent,
+      ),
+    ];
 
     Ticker ticker;
     ticker = createTicker((Duration d) {
       setState(() {
         if (d.inMilliseconds >= duration.inMilliseconds) {
           _animDistance = 1;
-          _layer = [() => _maskWidget(duration), _layer[0]];
+          _layer.removeLast();
           ticker.stop();
         } else {
           _animDistance = d.inMilliseconds / duration.inMilliseconds;
@@ -939,11 +945,11 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
 
   TickerFuture _closeLayer(Duration duration) {
     setState(() {
-      _layer = [_layer[1], () => Container(
+      _layer.add(() => Container(
         width: _size.width,
         height: _size.height,
         color: Colors.transparent,
-      )];
+      ));
     });
     Ticker ticker;
     ticker = createTicker((Duration d) {
@@ -964,7 +970,21 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
 
   Widget _catalogueWidget() {
     double width = _size.width * 0.9;
-    double listViewHeight = (_size.height - _safeArea.top - _safeArea.bottom - 85);
+    double listViewHeight = (_size.height - _safeArea.top - _safeArea.bottom - 85.0);
+    double maxScrollOffset = 50.0 * _chapterList.length - listViewHeight;
+    if (maxScrollOffset < 0.0) maxScrollOffset = 0.0;
+    if (!_chapterListScrollController.hasClients) {
+      _chapterListScrollController = ScrollController(
+        initialScrollOffset: (50.0 * _currentChapter).clamp(0.0, maxScrollOffset),
+        keepScrollOffset: false,
+      );
+    }
+    double scrollOffset = _chapterListScrollController.hasClients
+                          ? _chapterListScrollController.offset
+                          : _chapterListScrollController.initialScrollOffset;
+    double scrollProgress = maxScrollOffset == 0.0 ? 0.0 : scrollOffset / maxScrollOffset;
+    _chapterListScrollController.addListener(() => setState(() {}));
+
     return Positioned(
       left: width * (_animDistance - 1),
       child: Container(
@@ -1025,45 +1045,68 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
               ),
             ),
             Expanded(
-              child: Material(
-                color: Colors.transparent,
-                child: ListView.builder(
-                  controller: ScrollController(
-                    initialScrollOffset: (50.0 * _currentChapter).clamp(0, 50.0 * _chapterList.length - listViewHeight),
-                  ),
-                  padding: EdgeInsets.zero,
-                  itemExtent: 50,
-                  itemCount: _chapterList.length,
-                  itemBuilder: (BuildContext context, int index) {
-                    return FlatButton(
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      highlightColor: const Color.fromRGBO(0, 0, 0, 0.1),
-                      splashColor: const Color.fromRGBO(0, 0, 0, 0.03),
-                      padding: const EdgeInsets.fromLTRB(15, 0, 15, 0),
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          _chapterList[index].title,
-                          style: TextStyle(
-                            color: _currentChapter == index
-                                ? const Color.fromRGBO(51, 153, 255, 1)
-                                : (true ? const Color.fromRGBO(98, 106, 115, 1)
-                                : const Color.fromRGBO(162, 171, 179, 1)),
-                            fontSize: 14,
-                            height: 0.8,
+              child: Stack(
+                children: <Widget>[
+                  Material(
+                    color: Colors.transparent,
+                    child: ListView.builder(
+                      controller: _chapterListScrollController,
+                      padding: EdgeInsets.zero,
+                      itemExtent: 50,
+                      itemCount: _chapterList.length,
+                      itemBuilder: (BuildContext context, int index) {
+                        return FlatButton(
+                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          highlightColor: const Color.fromRGBO(0, 0, 0, 0.1),
+                          splashColor: const Color.fromRGBO(0, 0, 0, 0.03),
+                          padding: const EdgeInsets.fromLTRB(15, 0, 15, 0),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              _chapterList[index].title,
+                              style: TextStyle(
+                                color: _currentChapter == index
+                                    ? const Color.fromRGBO(51, 153, 255, 1)
+                                    : (true ? const Color.fromRGBO(98, 106, 115, 1)
+                                    : const Color.fromRGBO(162, 171, 179, 1)),
+                                fontSize: 14,
+                                height: 0.8,
+                              ),
+                              softWrap: true,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
-                          softWrap: true,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      onPressed: () {
-                        _toChapter(index);
-                        _closeLayer(Duration(milliseconds: 250));
+                          onPressed: () {
+                            _toChapter(index);
+                            _closeLayer(Duration(milliseconds: 250));
+                          },
+                        );
                       },
-                    );
-                  },
-                ),
+                    ),
+                  ),
+                  Positioned(
+                    top: scrollProgress * (listViewHeight - 27),
+                    right: 1,
+                    child: GestureDetector(
+                      onVerticalDragUpdate: (DragUpdateDetails details) {
+                        double p = details.primaryDelta / (listViewHeight - 27) * maxScrollOffset;
+                        double value = (_chapterListScrollController.offset + p).clamp(0.0, maxScrollOffset);
+                        _chapterListScrollController.jumpTo(value);
+                      },
+                      child: Container(
+                        width: 15,
+                        height: 27,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(2),
+                          boxShadow: [BoxShadow(color: Colors.black54, blurRadius: 1)],
+                          color: const Color.fromRGBO(245, 245, 245, 1),
+                        ),
+                        child: Icon(Icons.menu, size: 14, color: Colors.black26),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],

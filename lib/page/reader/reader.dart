@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:reader/page/reader/turning/page_turning.dart';
 import 'package:reader/page/reader/turning/simulation.dart';
+import 'package:reader/page/reader/turning/coverage.dart';
 import 'package:reader/page/reader/calc_pages.dart';
 import 'package:reader/page/reader/reader_icon.dart';
 import 'package:reader/utils/local_storage.dart';
@@ -25,8 +26,13 @@ class Chapter {
        assert(id != null);
 }
 
+enum _pageTurningType {
+  COVERAGE,
+  SIMULATION,
+}
+
 class ReaderPreferences {
-  int pageTurning;
+  _pageTurningType pageTurning;
   Color background;
   Color fontColor;
   double fontSize;
@@ -39,7 +45,7 @@ class ReaderPreferences {
   Color get realFontColor => nightMode ? Colors.white70 : fontColor;
 
   static final ReaderPreferences defaultPref = ReaderPreferences(
-    pageTurning: 0,
+    pageTurning: _pageTurningType.COVERAGE,
     background: Color.fromRGBO(213, 239, 210, 1),
     fontColor: Colors.black87,
     fontSize: 17,
@@ -373,15 +379,32 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     List<Picture> pages = _getPages();
     if (pages == null) return null;
 
-    return SimulationPageTurningPainter(
-      beginTouchPoint: _beginPoint,
-      touchPoint: _currentPoint,
-      prevPage: pages[0],
-      currentPage: pages[1],
-      nextPage: pages[2],
-      background: _preferences.realBackground,
-      toPrev: _toPrev,
-    );
+    PageTurningPainter pageTurningPainter;
+    switch (_preferences.pageTurning) {
+      case _pageTurningType.COVERAGE:
+        pageTurningPainter = CoveragePageTurning(
+          touchPoint: _currentPoint,
+          prevPage: pages[0],
+          currentPage: pages[1],
+          nextPage: pages[2],
+          background: _preferences.realBackground,
+          toPrev: _toPrev,
+        );
+        break;
+      case _pageTurningType.SIMULATION:
+        pageTurningPainter = SimulationPageTurningPainter(
+          beginTouchPoint: _beginPoint,
+          touchPoint: _currentPoint,
+          prevPage: pages[0],
+          currentPage: pages[1],
+          nextPage: pages[2],
+          background: _preferences.realBackground,
+          toPrev: _toPrev,
+        );
+        break;
+    }
+
+    return pageTurningPainter;
   }
 
   void _actualToPrev() {
@@ -420,14 +443,14 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
 
   void _cancelToPrevPage() {
     _toPrev = true;
-    _animDistance = -_currentPoint.dx - (_size.width - _currentPoint.dx) / 4;
+    _animDistance = -_currentPoint.dx - 0.01;
     _animDistance2 = 0;
     _ticker.start();
   }
 
   void _cancelToNextPage() {
     _toPrev = false;
-    _animDistance = _size.width - _currentPoint.dx + 1; // don't be zero
+    _animDistance = _size.width - _currentPoint.dx + 0.01; // don't be zero
     _animDistance2 = 0;
     if (_currentPoint.dy < _size.height / 3) {
       _animDistance2 = -_currentPoint.dy;
@@ -466,6 +489,8 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
         _currentPoint.dy + _animDistance2 * p,
       );
     });
+    _animDistance -= _animDistance * p;
+    _animDistance2 -= _animDistance2 * p;
   }
 
   bool _canTurningPage() {

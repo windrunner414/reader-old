@@ -416,7 +416,8 @@ class SimulationPageTurningPainter extends PageTurningPainter {
       && oldDelegate.prevPage == prevPage
       && oldDelegate.currentPage == currentPage
       && oldDelegate.nextPage == nextPage
-      && oldDelegate.toPrev == toPrev) {
+      && oldDelegate.toPrev == toPrev
+      && oldDelegate.background == background) {
       return false;
     } else {
       return true;

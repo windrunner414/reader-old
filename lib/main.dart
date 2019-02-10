@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:reader/page/reader/reader.dart';
 import 'dart:math';
+import 'package:flutter/services.dart';
 
 void main() {
+  SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
   runApp(MyApp());
 }
 
@@ -13,6 +15,7 @@ class MyApp extends StatelessWidget {
       title: 'Flutter Demo',
       theme: ThemeData(
         primarySwatch: Colors.blue,
+        brightness: Brightness.light,
       ),
       home: MyHomePage(),
     );
@@ -176,6 +179,7 @@ class _MyHomePageState extends State<MyHomePage> {
       },
       getChapterList: () async {
         await Future.delayed(Duration(milliseconds: 1000));
+        //return null;
         List<Chapter> chapterList = [];
         for (var i = 0; i < 10000; ++i) {
           chapterList.addAll([

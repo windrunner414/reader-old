@@ -144,7 +144,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   bool _inLoading = false;
   bool _loadError = false;
 
-  List<Chapter> _chapterList;
+  List<Chapter> _chapterList = [];
   int __currentChapter;
   int __currentPage;
 
@@ -168,7 +168,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   Map<int, String> _chapterContents = {};
   int _cacheId = -1;
 
-  EdgeInsets get _safeArea => EdgeInsets.fromWindowPadding(window.padding, window.devicePixelRatio);
+  EdgeInsets _safeArea = EdgeInsets.zero;
   int _batteryLevel = 100;
 
   List<_layerBuilder> _layer = [];
@@ -280,9 +280,9 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     if (_inLoading) return;
 
     _showLoading();
-    if (_chapterList == null) {
+    if (_chapterList.isEmpty) {
       await _getChapterList();
-      if (_chapterList == null) {
+      if (_chapterList.isEmpty) {
         _hideLoading(false);
         return;
       }
@@ -304,7 +304,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   }
 
   Future<void> _cacheChapters() async {
-    if (_cacheId == _currentChapter || _chapterList == null) {
+    if (_cacheId == _currentChapter || _chapterList.isEmpty) {
       return;
     }
 
@@ -494,6 +494,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   }
 
   bool _canTurningPage() {
+    if (_chapterList.isEmpty) return false;
     if (_currentChapter < 0 || _currentChapter >= _chapterList.length) return true;
     if (_toPrev) {
       return _currentChapter > 0 || _currentPage > 0;
@@ -679,11 +680,10 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   }
 
   Widget _topWidget() {
-    EdgeInsets safeArea = _safeArea;
     return Positioned(
-      top: safeArea.top + 10,
-      left: safeArea.left + 15,
-      right: safeArea.right + 15,
+      top: _safeArea.top + 10,
+      left: _safeArea.left + 15,
+      right: _safeArea.right + 15,
       child: Text(
         _chapterList[_currentChapter].title,
         style: TextStyle(
@@ -699,11 +699,10 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   }
 
   Widget _bottomWidget() {
-    var safeArea = _safeArea;
     return Positioned(
-      bottom: safeArea.bottom + 10,
-      left: safeArea.left + 15,
-      right: safeArea.right + 15,
+      bottom: _safeArea.bottom + 10,
+      left: _safeArea.left + 15,
+      right: _safeArea.right + 15,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
@@ -817,14 +816,13 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   }
 
   Widget _toolBarTopWidget() {
-    EdgeInsets safeArea = _safeArea;
     return Container(
       color: Colors.white,
       padding: EdgeInsets.fromLTRB(
-        8 + safeArea.left, safeArea.top,
-        15 + safeArea.right, 0,
+        8 + _safeArea.left, _safeArea.top,
+        15 + _safeArea.right, 0,
       ),
-      height: 45 + safeArea.top,
+      height: 45 + _safeArea.top,
       child: Row(
         children: <Widget>[
           Expanded(
@@ -878,7 +876,6 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   }
 
   Widget _toolBarBottomWidget() {
-    EdgeInsets safeArea = _safeArea;
     return Positioned(
       bottom: 0,
       left: 0,
@@ -886,12 +883,12 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
       child: Container(
         color: Colors.white,
         padding: EdgeInsets.fromLTRB(
-          safeArea.left,
+          _safeArea.left,
           8,
-          safeArea.right,
-          8 + safeArea.bottom,
+          _safeArea.right,
+          8 + _safeArea.bottom,
         ),
-        height: 58 + safeArea.bottom,
+        height: 58 + _safeArea.bottom,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: <Widget>[
@@ -922,7 +919,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
               icon: ReaderIcon.setting,
               text: '设置',
               onPressed: () {
-                _showLayer(Duration(milliseconds: 150), _settingWidget);
+                _showLayer(Duration(milliseconds: 100), _settingWidget);
               },
             ),
             _iconButton(
@@ -1188,13 +1185,20 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   Widget build(BuildContext context) {
     List<Widget> children = [];
     Size size = MediaQuery.of(context).size;
+    EdgeInsets safeArea = MediaQuery.of(context).padding;
+    bool needRecalcPages = false;
+
+    if (safeArea != _safeArea) {
+      _safeArea = safeArea;
+      needRecalcPages = true;
+    }
 
     if (size != Size.zero && size != _size) {
-      _size = size;
-      _reCalcPages();
-    } else {
-      _size = size;
+      needRecalcPages = true;
     }
+    _size = size;
+
+    if (needRecalcPages) _reCalcPages();
 
     if (size == Size.zero || _preferences == null) {
       children.add(Container(
@@ -1216,7 +1220,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
       ));
     }
 
-    if (_chapterList != null && _currentChapter >= 0 && _currentChapter < _chapterList.length) {
+    if (_currentChapter != null && _currentChapter >= 0 && _currentChapter < _chapterList.length) {
       children.add(_topWidget());
     }
 

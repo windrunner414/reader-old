@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:reader/page/reader/turning/page_turning.dart';
 import 'dart:ui';
 
-class CoveragePageTurning extends PageTurningPainter {
-  final Offset touchPoint;
+class CoveragePageTurningPainter extends PageTurningPainter {
+  final Offset beginTouchPoint, touchPoint;
   final bool toPrev;
   final Color background;
   final Picture prevPage, currentPage, nextPage;
@@ -13,7 +13,8 @@ class CoveragePageTurning extends PageTurningPainter {
 
   static final shadow = Shadow(color: const Color.fromRGBO(0, 0, 0, 0.5), blurRadius: 5).toPaint();
 
-  CoveragePageTurning({
+  CoveragePageTurningPainter({
+    @required this.beginTouchPoint,
     @required this.touchPoint,
     @required this.toPrev,
     @required this.background,
@@ -28,10 +29,13 @@ class CoveragePageTurning extends PageTurningPainter {
     size = _size;
 
     if (background != null) canvas.drawColor(background, BlendMode.src);
-    if (touchPoint == null) {
+    if (touchPoint == null || beginTouchPoint == null) {
       if (currentPage != null) canvas.drawPicture(currentPage);
       return;
     }
+
+    double dx = toPrev ? touchPoint.dx - beginTouchPoint.dx : size.width - beginTouchPoint.dx + touchPoint.dx;
+    if (!toPrev && dx > size.width) dx = size.width;
 
     canvas.clipPath(Path()
       ..lineTo(size.width, 0)
@@ -40,23 +44,23 @@ class CoveragePageTurning extends PageTurningPainter {
       ..close());
 
     Path pathA = Path()
-      ..lineTo(touchPoint.dx, 0)
-      ..lineTo(touchPoint.dx, size.height)
+      ..lineTo(dx, 0)
+      ..lineTo(dx, size.height)
       ..lineTo(0, size.height)
       ..close();
 
     Path pathB = Path()
-      ..moveTo(touchPoint.dx, 0)
+      ..moveTo(dx, 0)
       ..lineTo(size.width, 0)
       ..lineTo(size.width, size.height)
-      ..lineTo(touchPoint.dx, size.height)
+      ..lineTo(dx, size.height)
       ..close();
 
     Path pathShadow = Path()
-      ..moveTo(touchPoint.dx, 0)
-      ..lineTo(touchPoint.dx + 5, 0)
-      ..lineTo(touchPoint.dx + 5, size.height)
-      ..lineTo(touchPoint.dx, size.height)
+      ..moveTo(dx, 0)
+      ..lineTo(dx + 5, 0)
+      ..lineTo(dx + 5, size.height)
+      ..lineTo(dx, size.height)
       ..close();
 
     if (toPrev) {
@@ -69,7 +73,7 @@ class CoveragePageTurning extends PageTurningPainter {
       if (prevPage != null) {
         canvas.save();
         canvas.clipPath(pathA);
-        canvas.translate(touchPoint.dx - size.width, 0);
+        canvas.translate(dx - size.width, 0);
         canvas.drawPicture(prevPage);
         canvas.restore();
       }
@@ -77,7 +81,7 @@ class CoveragePageTurning extends PageTurningPainter {
       if (currentPage != null) {
         canvas.save();
         canvas.clipPath(pathA);
-        canvas.translate(touchPoint.dx - size.width, 0);
+        canvas.translate(dx - size.width, 0);
         canvas.drawPicture(currentPage);
         canvas.restore();
       }
@@ -91,8 +95,9 @@ class CoveragePageTurning extends PageTurningPainter {
   }
 
   @override
-  bool shouldRepaint(CoveragePageTurning oldDelegate) {
-    return touchPoint != oldDelegate.touchPoint
+  bool shouldRepaint(CoveragePageTurningPainter oldDelegate) {
+    return beginTouchPoint != oldDelegate.beginTouchPoint
+      || touchPoint != oldDelegate.touchPoint
       || toPrev != oldDelegate.toPrev
       || background != oldDelegate.background
       || prevPage != oldDelegate.prevPage

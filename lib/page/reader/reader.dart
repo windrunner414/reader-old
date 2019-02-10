@@ -26,13 +26,13 @@ class Chapter {
        assert(id != null);
 }
 
-enum _pageTurningType {
+enum _PageTurningType {
   COVERAGE,
   SIMULATION,
 }
 
 class ReaderPreferences {
-  _pageTurningType pageTurning;
+  _PageTurningType pageTurning;
   Color background;
   Color fontColor;
   double fontSize;
@@ -45,7 +45,7 @@ class ReaderPreferences {
   Color get realFontColor => nightMode ? Colors.white70 : fontColor;
 
   static final ReaderPreferences defaultPref = ReaderPreferences(
-    pageTurning: _pageTurningType.COVERAGE,
+    pageTurning: _PageTurningType.COVERAGE,
     background: Color.fromRGBO(213, 239, 210, 1),
     fontColor: Colors.black87,
     fontSize: 17,
@@ -67,7 +67,7 @@ class ReaderPreferences {
   });
 
   Map<String, dynamic> toJson() => {
-    'pageTurning': pageTurning,
+    'pageTurning': pageTurning?.index,
     'background': background?.value,
     'fontColor': fontColor?.value,
     'fontSize': fontSize,
@@ -78,7 +78,7 @@ class ReaderPreferences {
   };
 
   ReaderPreferences.fromJson(Map<String, dynamic> json) :
-    pageTurning = json['pageTurning'],
+    pageTurning = json['pageTurning'] != null ? _PageTurningType.values[json['pageTurning']] : null,
     background = json['background'] != null ? Color(json['background']) : null,
     fontColor = json['fontColor'] != null ? Color(json['fontColor']) : null,
     fontSize = json['fontSize'],
@@ -378,8 +378,9 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
 
     PageTurningPainter pageTurningPainter;
     switch (_preferences.pageTurning) {
-      case _pageTurningType.COVERAGE:
-        pageTurningPainter = CoveragePageTurning(
+      case _PageTurningType.COVERAGE:
+        pageTurningPainter = CoveragePageTurningPainter(
+          beginTouchPoint: _beginPoint,
           touchPoint: _currentPoint,
           prevPage: pages[0],
           currentPage: pages[1],
@@ -388,7 +389,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
           toPrev: _toPrev,
         );
         break;
-      case _pageTurningType.SIMULATION:
+      case _PageTurningType.SIMULATION:
         pageTurningPainter = SimulationPageTurningPainter(
           beginTouchPoint: _beginPoint,
           touchPoint: _currentPoint,
@@ -416,7 +417,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
 
   void _toPrevPage() {
     _toPrev = true;
-    _animDistance = _size.width - _currentPoint.dx;
+    _animDistance = _size.width - _currentPoint.dx + _beginPoint.dx;
     _animDistance2 = 0;
     _ticker.start();
   }
@@ -433,27 +434,29 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
 
   void _toNextPage() {
     _toPrev = false;
-    _animDistance = -_currentPoint.dx;
+    _animDistance = -_currentPoint.dx - _size.width + _beginPoint.dx;
     _animDistance2 = 0;
     _ticker.start();
   }
 
   void _cancelToPrevPage() {
     _toPrev = true;
-    _animDistance = -_currentPoint.dx - 0.01;
+    _animDistance = -_size.width;
     _animDistance2 = 0;
     _ticker.start();
   }
 
   void _cancelToNextPage() {
     _toPrev = false;
-    _animDistance = _size.width - _currentPoint.dx + 0.01; // don't be zero
-    _animDistance2 = 0;
+    _animDistance = _size.width;
     if (_currentPoint.dy < _size.height / 3) {
       _animDistance2 = -_currentPoint.dy;
     } else if (_currentPoint.dy >= _size.height * 2 / 3) {
       _animDistance2 = _size.height - _currentPoint.dy;
+    } else {
+      _animDistance2 = 0;
     }
+    _animDistance2 *= _size.width / (_size.width - _currentPoint.dx);
     _ticker.start();
   }
 
@@ -919,7 +922,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
               icon: ReaderIcon.setting,
               text: '设置',
               onPressed: () {
-
+                _showLayer(Duration(milliseconds: 150), _settingWidget);
               },
             ),
             _iconButton(
@@ -1157,7 +1160,30 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
       ),
     );
   }
-  
+
+  Widget _settingWidget() {
+    return Positioned(
+      left: 0,
+      right: 0,
+      bottom: (150 + _safeArea.bottom) * (_animDistance - 1),
+      child: Container(
+        padding: EdgeInsets.fromLTRB(_safeArea.left, 0, _safeArea.right, _safeArea.bottom),
+        height: 150 + _safeArea.bottom,
+        color: Colors.white,
+        child: Column(
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                FlatButton(onPressed: () {setPreferences(ReaderPreferences(pageTurning: _PageTurningType.COVERAGE));}, child: Text('覆盖')),
+                FlatButton(onPressed: () {setPreferences(ReaderPreferences(pageTurning: _PageTurningType.SIMULATION));}, child: Text('仿真')),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     List<Widget> children = [];

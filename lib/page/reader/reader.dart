@@ -229,7 +229,6 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
       __currentChapter = int.tryParse(progress[0]) ?? 0;
       __currentPage = int.tryParse(progress[1]) ?? 0;
     } else {
-      // don't use setter, don't save it
       __currentChapter = 0;
       __currentPage = 0;
     }
@@ -273,7 +272,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   Future<void> _getChapterList() async {
     List<Chapter> chapterList = await widget.getChapterList();
     if (chapterList != null && chapterList.length > 0) {
-      _chapterList = chapterList;
+      setState(() => _chapterList = chapterList);
     }
   }
 
@@ -305,7 +304,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   }
 
   Future<void> _cacheChapters() async {
-    if (_cacheId == _currentChapter) {
+    if (_cacheId == _currentChapter || _chapterList == null) {
       return;
     }
 
@@ -341,11 +340,10 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     if (!_loadError) {
       if (_chapterPages[_currentChapter] == null) {
         _getChapterPages();
-        return null;
+      } else {
+        _cacheChapters();
       }
     }
-
-    _cacheChapters();
 
     List<Picture> currentChapterPages = _chapterPages[_currentChapter] ?? [null];
     List<Picture> returnPages = [];
@@ -377,7 +375,6 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
 
   PageTurningPainter _getPageTurningPainter() {
     List<Picture> pages = _getPages();
-    if (pages == null) return null;
 
     PageTurningPainter pageTurningPainter;
     switch (_preferences.pageTurning) {
@@ -1165,7 +1162,6 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   Widget build(BuildContext context) {
     List<Widget> children = [];
     Size size = MediaQuery.of(context).size;
-    PageTurningPainter painter;
 
     if (size != Size.zero && size != _size) {
       _size = size;
@@ -1174,9 +1170,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
       _size = size;
     }
 
-    if (size == Size.zero
-        || _preferences == null
-        || (painter = _getPageTurningPainter()) == null) {
+    if (size == Size.zero || _preferences == null) {
       children.add(Container(
         color: _preferences?.realBackground,
       ));
@@ -1190,7 +1184,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
             size: size,
             isComplex: true,
             willChange: _inDrag,
-            painter: painter,
+            painter: _getPageTurningPainter(),
           ),
         ),
       ));

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:reader/page/reader/turning/page_turning.dart';
-import 'package:reader/page/reader/turning/simulation.dart';
-import 'package:reader/page/reader/turning/coverage.dart';
 import 'package:reader/page/reader/calc_pages.dart';
 import 'package:reader/page/reader/reader_icon.dart';
 import 'package:reader/utils/local_storage.dart';
@@ -10,10 +8,12 @@ import 'package:reader/utils/time.dart';
 import 'dart:math';
 import 'dart:ui';
 import 'dart:convert';
+import 'dart:async';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:battery/battery.dart';
+import 'package:flutter_seekbar/flutter_seekbar.dart';
 
 class Chapter {
   String title;
@@ -174,6 +174,8 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   List<_layerBuilder> _layer = [];
 
   ScrollController _chapterListScrollController = ScrollController();
+  Timer _progressTimer;
+  int _progressTempChapter;
 
   void _showLoading() {
     setState(() {
@@ -461,7 +463,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   }
 
   void _toChapter(int chapter) {
-    _currentChapter = chapter;
+    _currentChapter = chapter.clamp(0, _chapterList.length - 1);
     _currentPage = 0;
     _loadError = false;
   }
@@ -591,7 +593,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     }
   }
 
-  void _onPanStart(DragStartDetails details) {
+  void _onPanDown(DragDownDetails details) {
     if (_ticker.isActive) {
       _onTick(Duration(milliseconds: 3000)); // stop
     }
@@ -628,6 +630,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     if (_preferences.fullScreen) {
       SystemChrome.setEnabledSystemUIOverlays(SystemUiOverlay.values);
     }
+    _progressTimer?.cancel();
     super.dispose();
   }
 
@@ -926,7 +929,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
               icon: ReaderIcon.progress,
               text: '进度',
               onPressed: () {
-
+                _showLayer(Duration(milliseconds: 100), _progressWidget);
               },
             ),
           ],
@@ -938,7 +941,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   Widget _maskWidget(Duration duration) {
     return WillPopScope(
       child: GestureDetector(
-        onPanStart: (DragStartDetails details) {
+        onPanDown: (DragDownDetails details) {
           _closeLayer(duration);
         },
         child: Container(
@@ -1181,24 +1184,186 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     );
   }
 
+  Widget _progressWidget() {
+    var stopTimer = () {
+      _progressTimer?.cancel();
+      _progressTimer = null;
+      if (_progressTempChapter == null) return;
+      Future.delayed(Duration.zero, () => setState(() {
+        _toChapter(_progressTempChapter);
+        _progressTempChapter = null;
+      }));
+    };
+
+    var startTimer = (VoidCallback fn) {
+      _progressTimer?.cancel();
+      _progressTempChapter ??= _currentChapter;
+      _progressTimer = Timer.periodic(Duration(milliseconds: 80), (Timer timer) {
+        setState(fn);
+      });
+    };
+
+    return Positioned(
+      left: 0,
+      right: 0,
+      bottom: (105 + _safeArea.bottom) * (_animDistance - 1),
+      height: (105 + _safeArea.bottom),
+      child: Stack(
+        children: <Widget>[
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 55 + _safeArea.bottom,
+            child: Center(
+              child: Container(
+                height: 50,
+                padding: const EdgeInsets.fromLTRB(15, 0, 15, 0),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: <Widget>[
+                    Text(
+                      _chapterList[
+                      (_progressTempChapter ?? _currentChapter).clamp(0, _chapterList.length - 1)
+                      ].title,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: const Color.fromRGBO(51, 153, 255, 1),
+                        fontWeight: FontWeight.normal,
+                        decoration: TextDecoration.none,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      _chapterList.length == 1 ? '100%' : '${(((_progressTempChapter ?? _currentChapter)
+                        .clamp(0, _chapterList.length - 1)) / (_chapterList.length - 1) * 100)
+                        .toStringAsFixed(2)}%',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: const Color.fromRGBO(51, 153, 255, 1),
+                        fontWeight: FontWeight.normal,
+                        decoration: TextDecoration.none,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Container(
+              height: 40 + _safeArea.bottom,
+              padding: EdgeInsets.fromLTRB(_safeArea.left + 15, 0, _safeArea.right + 15, _safeArea.bottom),
+              color: Colors.white,
+              child: Row(
+                children: <Widget>[
+                  GestureDetector(
+                    onTapDown: (_) {
+                      _progressTimer?.cancel();
+                      _progressTimer = Timer(Duration(milliseconds: 500), () {
+                        startTimer(() => --_progressTempChapter);
+                      });
+                    },
+                    onTapUp: (_) {
+                      if (_progressTimer == null) return;
+                      if (_progressTimer.tick == 0) {
+                        _progressTempChapter ??= _currentChapter;
+                        if (_progressTempChapter <= 0) Fluttertoast.showToast(msg: '没有上一章了');
+                        else --_progressTempChapter;
+                      }
+                      stopTimer();
+                    },
+                    onTapCancel: stopTimer,
+                    child: Text(
+                      '上一章',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: const Color.fromRGBO(51, 153, 255, 1),
+                        fontWeight: FontWeight.normal,
+                        decoration: TextDecoration.none,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(15, 0, 15, 0),
+                      child: SeekBar(
+                        min: 0,
+                        max: _chapterList.length.toDouble(),
+                        value: _progressTempChapter?.toDouble() ?? _currentChapter.toDouble(),
+                        onValueChanged: (ProgressValue value, bool isEnd) {
+                          _progressTimer?.cancel();
+                          _progressTempChapter = value.value.round();
+                          if (isEnd) {
+                            stopTimer();
+                          } else {
+                            setState(() {});
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTapDown: (_) {
+                      _progressTimer?.cancel();
+                      _progressTimer = Timer(Duration(milliseconds: 500), () {
+                        startTimer(() => ++_progressTempChapter);
+                      });
+                    },
+                    onTapUp: (_) {
+                      if (_progressTimer == null) return;
+                      if (_progressTimer.tick == 0) {
+                        _progressTempChapter ??= _currentChapter;
+                        if (_progressTempChapter >= _chapterList.length - 1) Fluttertoast.showToast(msg: '没有下一章了');
+                        else ++_progressTempChapter;
+                      }
+                      stopTimer();
+                    },
+                    onTapCancel: stopTimer,
+                    child: Text(
+                      '下一章',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: const Color.fromRGBO(51, 153, 255, 1),
+                        fontWeight: FontWeight.normal,
+                        decoration: TextDecoration.none,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     List<Widget> children = [];
     Size size = MediaQuery.of(context).size;
     EdgeInsets safeArea = MediaQuery.of(context).padding;
-    bool needRecalcPages = false;
+    bool needReCalcPages = false;
 
     if (safeArea != _safeArea) {
       _safeArea = safeArea;
-      needRecalcPages = true;
+      needReCalcPages = true;
     }
 
     if (size != Size.zero && size != _size) {
-      needRecalcPages = true;
+      needReCalcPages = true;
     }
     _size = size;
 
-    if (needRecalcPages) _reCalcPages();
+    if (needReCalcPages) _reCalcPages();
 
     if (size == Size.zero || _preferences == null) {
       children.add(Container(
@@ -1209,7 +1374,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
         child: GestureDetector(
           onPanUpdate: _onPanUpdate,
           onPanEnd: _onPanEnd,
-          onPanStart: _onPanStart,
+          onPanDown: _onPanDown,
           child: CustomPaint(
             size: size,
             isComplex: true,
@@ -1238,11 +1403,15 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
       children.add(_loadingWidget());
     }
 
-    return WillPopScope(
-      onWillPop: widget.onWillPop,
-      child: Stack(
-        children: children,
-      ),
-    );
+    return _layer.isNotEmpty
+      ? Stack(
+          children: children,
+        )
+      : WillPopScope(
+          onWillPop: widget.onWillPop,
+          child: Stack(
+            children: children,
+          ),
+        );
   }
 }

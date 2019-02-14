@@ -53,9 +53,9 @@ class _MyHomePageState extends State<MyHomePage> {
       getChapterContent: (String id) async {
         if (id == '1') {
           await Future.delayed(Duration(seconds: 3));
-          return '';
-          return null;
-          if (Random(DateTime.now().millisecondsSinceEpoch).nextInt(5) >= 3) return null;
+          //return '';
+          //return null;
+          //if (Random(DateTime.now().millisecondsSinceEpoch).nextInt(5) >= 3) return null;
           return '''“斗之力，三段！”
     望着测验魔石碑上面闪亮得甚至有些刺眼的五个大字，少年面无表情，唇角有着一抹自嘲，紧握的手掌，因为大力，而导致略微尖锐的指甲深深的刺进了掌心之，带来一阵阵钻心的疼痛…
     “萧炎，斗之力，三段！级别：低级！”测验魔石碑之旁，一位年男，看了一眼碑上所显示出来的信息，语气漠然的将之公布了出来…
@@ -112,6 +112,7 @@ class _MyHomePageState extends State<MyHomePage> {
     站在原地望着少年那恍如与世隔绝的孤独背影，萧薰儿踌躇了一会，然后在身后一干嫉妒的狼嚎声，快步追了上去，与少年并肩而行… ''';
         } else if (id == '2') {
           await Future.delayed(Duration(seconds: 3));
+          //return null;
           return '''月如银盘，漫天繁星。
     山崖之颠，萧炎斜躺在草地之上，嘴叼一根青草，微微嚼动，任由那淡淡的苦涩在嘴弥漫开来…
     举起有些白皙的手掌，挡在眼前，目光透过手指缝隙，遥望着天空上那轮巨大的银月。
@@ -178,7 +179,7 @@ class _MyHomePageState extends State<MyHomePage> {
         }
       },
       getChapterList: () async {
-        await Future.delayed(Duration(milliseconds: 1000));
+        await Future.delayed(Duration(milliseconds: 500));
         //return null;
         List<Chapter> chapterList = [];
         for (var i = 0; i < 10000; ++i) {

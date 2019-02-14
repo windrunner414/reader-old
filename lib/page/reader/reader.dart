@@ -29,6 +29,7 @@ class Chapter {
 enum _PageTurningType {
   COVERAGE,
   SIMULATION,
+  ROLL,
 }
 
 class ReaderPreferences {
@@ -119,7 +120,7 @@ class Reader extends StatefulWidget {
        assert(getChapterList != null),
        assert(onDownload != null),
        assert(isCached != null),
-       assert(preloadNum != null && preloadNum >= 0),
+       assert(preloadNum != null && preloadNum >= 1),
        assert(onWillPop != null),
        super(key: key);
 
@@ -135,6 +136,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
 
   bool _inDrag = false, _toPrev = false;
   Offset _beginPoint, _currentPoint, _touchStartPoint;
+  int _touchStartMilliseconds;
 
   Ticker _ticker; // ticker for page turning animation.
   double _animDistance;
@@ -164,9 +166,9 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     _saveReadProgress();
   }
 
-  Map<int, List<Picture>> _chapterPages = {};
+  Map<int, List> _chapterPages = {};
   Map<int, String> _chapterContents = {};
-  int _cacheId = -1;
+  Map<int, int> _cachingChapters = {};
 
   EdgeInsets _safeArea = EdgeInsets.zero;
   int _batteryLevel = 100;
@@ -175,7 +177,14 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
 
   ScrollController _chapterListScrollController = ScrollController();
   Timer _progressTimer;
+  Timer _refreshChapterListTimer;
+  Timer _updateSystemStatusTimer;
   int _progressTempChapter;
+
+  RollPageTurningController _rollPageTurningController;
+  double get _rollPageTurningScrollHeight =>
+    _size.height - _safeArea.top - _safeArea.bottom - _pagePadding.top - _pagePadding.bottom;
+  EdgeInsets _pagePadding = const EdgeInsets.fromLTRB(15, 30, 15, 30);
 
   void _showLoading() {
     setState(() {
@@ -246,12 +255,20 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     _hideLoading();
   }
 
+  int _getTotalPage(int chapter) {
+    if (_chapterPages[chapter] == null) return 1;
+    return (_chapterPages[chapter].length == 3 && _chapterPages[chapter][2].runtimeType == int)
+        ? _chapterPages[chapter][2] : _chapterPages[chapter].length;
+  }
+
   void _reCalcPages() {
     _chapterContents.forEach((int k, String v) {
       if (k == _currentChapter) {
-        int totalPage = _chapterPages[k].length;
+        int totalPage = _getTotalPage(k);
         _chapterPages[k] = _calcPages(v);
-        _currentPage = (_currentPage / totalPage * _chapterPages[k].length).round();
+        int newTotalPage = _getTotalPage(k);
+        _currentPage = (_currentPage / totalPage * newTotalPage).round();
+        _rollPageTurningController = null;
         return;
       }
 
@@ -259,7 +276,8 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     });
   }
 
-  List<Picture> _calcPages(String content) {
+  List _calcPages(String content) {
+    if (_preferences.pageTurning == _PageTurningType.ROLL) return _calcPageForRoll(content);
     return calcPages(
       content: content,
       fontSize: _preferences.fontSize,
@@ -267,15 +285,37 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
       color: _preferences.realFontColor,
       height: _preferences.height,
       size: _size,
-      padding: (const EdgeInsets.fromLTRB(15, 30, 15, 30)).add(_safeArea),
+      padding: _pagePadding.add(_safeArea),
     );
   }
 
-  Future<void> _getChapterList() async {
+  List _calcPageForRoll(String content) {
+    return calcPageForRoll(
+      content: content,
+      fontSize: _preferences.fontSize,
+      fontWeight: _preferences.fontWeight,
+      color: _preferences.realFontColor,
+      height: _preferences.height,
+      size: Size(_size.width, _rollPageTurningScrollHeight),
+      padding: EdgeInsets.fromLTRB(_pagePadding.left + _safeArea.left, 0, _pagePadding.right + _safeArea.right, 0),
+    );
+  }
+
+  Future<void> _getChapterList([bool showLoading = false]) async {
+    if (_inLoading && _chapterList.isNotEmpty) return;
+    if (showLoading) _showLoading();
     List<Chapter> chapterList = await widget.getChapterList();
-    if (chapterList != null && chapterList.length > 0) {
-      setState(() => _chapterList = chapterList);
+    if (chapterList != null && chapterList.isNotEmpty) {
+      if (_refreshChapterListTimer == null) {
+        _refreshChapterListTimer = Timer.periodic(Duration(minutes: 5), (Timer timer) => _getChapterList());
+      }
+      _chapterList = chapterList;
+      if (_currentChapter != _currentChapter.clamp(0, _chapterList.length - 1)) {
+        _toChapter(_currentChapter);
+      }
+      setState(() {});
     }
+    if (showLoading) _hideLoading();
   }
 
   Future<void> _getChapterPages() async {
@@ -290,9 +330,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
       }
     }
 
-    if (_currentChapter < 0 || _currentChapter >= _chapterList.length) {
-      _currentChapter = 0;
-    }
+    _currentChapter = _currentChapter.clamp(0, _chapterList.length - 1);
 
     String content = await widget.getChapterContent(_chapterList[_currentChapter].id);
     if (content == null || content.isEmpty) {
@@ -306,20 +344,25 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   }
 
   Future<void> _cacheChapters() async {
-    if (_cacheId == _currentChapter || _chapterList.isEmpty) {
-      return;
-    }
+    if (_chapterList.isEmpty) return;
 
-    int id = _cacheId = _currentChapter;
+    var getCacheRange = () {
+      int cacheStart = _currentChapter - widget.preloadNum;
+      if (cacheStart < 0) cacheStart = 0;
+      int cacheEnd = _currentChapter + widget.preloadNum;
+      if (cacheEnd >= _chapterList.length) cacheEnd = _chapterList.length - 1;
+      return [cacheStart, cacheEnd];
+    };
 
-    int cacheStart = _currentChapter - widget.preloadNum;
-    if (cacheStart < 0) cacheStart = 0;
-    int cacheEnd = _currentChapter + widget.preloadNum;
-    if (cacheEnd >= _chapterList.length) cacheEnd = _chapterList.length - 1;
+    var inCacheRange = (int i, [List<int> cacheRange]) {
+      cacheRange ??= getCacheRange();
+      return i >= cacheRange[0] && i <= cacheRange[1];
+    };
 
+    List<int> cacheRange = getCacheRange();
     List<int> toRemove = [];
-    _chapterPages.forEach((int k, List<Picture> v) {
-      if (k < cacheStart || k > cacheEnd) {
+    _chapterPages.forEach((int k, List v) {
+      if (!inCacheRange(k, cacheRange)) {
         toRemove.add(k);
       }
     });
@@ -328,23 +371,41 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
       _chapterPages.remove(k);
     }
 
-    for (int i = cacheStart; i <= cacheEnd; ++i) {
-      if (i >= _chapterList.length || _chapterPages[i] != null) continue;
+    for (int i = cacheRange[0]; i <= cacheRange[1]; ++i) {
+      if (!inCacheRange(i)
+          || _chapterPages[i] != null
+          || _cachingChapters[i] != null) continue;
+
+      _cachingChapters[i] = 1;
       String content = await widget.getChapterContent(_chapterList[i].id);
-      if (_cacheId != id) return;
-      if (content == null || content.isEmpty || _chapterPages[i] != null) continue;
+
+      if (content == null || content.isEmpty
+          || _chapterPages[i] != null
+          || !inCacheRange(i)) continue;
+
       _chapterContents[i] = content;
       _chapterPages[i] = _calcPages(content);
+      _cachingChapters.remove(i);
     }
   }
 
-  List<Picture> _getPages() {
+  List _getPages() {
     if (!_loadError) {
       if (_chapterPages[_currentChapter] == null) {
         _getChapterPages();
+        if (_preferences.pageTurning != _PageTurningType.ROLL) return null;
       } else {
         _cacheChapters();
       }
+    }
+
+    if (_preferences.pageTurning == _PageTurningType.ROLL) {
+      List emptyPage = [null, _rollPageTurningScrollHeight];
+      return _chapterList.isEmpty ? [[null, 0.0], emptyPage, [null, 0.0]] : [
+        _chapterPages[_currentChapter - 1] ?? (_currentChapter > 0 ? emptyPage : [null, 0.0]),
+        _chapterPages[_currentChapter] ?? emptyPage,
+        _chapterPages[_currentChapter + 1] ?? (_currentChapter < _chapterList.length - 1 ? emptyPage : [null, 0.0]),
+      ];
     }
 
     List<Picture> currentChapterPages = _chapterPages[_currentChapter] ?? [null];
@@ -354,9 +415,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
       _currentPage += currentChapterPages.length;
     }
 
-    if (_currentPage < 0 || _currentPage >= currentChapterPages.length) {
-      _currentPage = 0;
-    }
+    _currentPage = _currentPage.clamp(0, currentChapterPages.length - 1);
 
     if (_currentPage == 0) {
       returnPages.add(_chapterPages[_currentChapter - 1]?.last);
@@ -376,7 +435,8 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   }
 
   PageTurningPainter _getPageTurningPainter() {
-    List<Picture> pages = _getPages();
+    List pages = _getPages();
+    if (pages == null) return null;
 
     PageTurningPainter pageTurningPainter;
     switch (_preferences.pageTurning) {
@@ -402,9 +462,70 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
           toPrev: _toPrev,
         );
         break;
+      case _PageTurningType.ROLL:
+        if (_rollPageTurningController == null) {
+          _rollPageTurningController = RollPageTurningController(
+            vsync: this,
+            onMotion: () => setState(() {}),
+            initialPage: _currentPage,
+          );
+        }
+        pageTurningPainter = RollPageTurningPainter(
+          controller: _rollPageTurningController,
+          inLoading: _inLoading,
+          beginTouchPoint: _beginPoint,
+          touchPoint: _currentPoint,
+          prevChapter: pages[0],
+          currentChapter: pages[1],
+          nextChapter: pages[2],
+          background: _preferences.realBackground,
+          padding: EdgeInsets.fromLTRB(0, _pagePadding.top + _safeArea.top, 0, _pagePadding.bottom + _safeArea.bottom),
+          onPageChange: (int page) {
+            Future.delayed(Duration.zero).then((_) => setState(() => _currentPage = page));
+          },
+          toNextChapter: () {
+            ++_currentChapter;
+            _currentPage = 0;
+            _loadError = false;
+            Future.delayed(Duration.zero).then((_) => setState(() {}));
+          },
+          toPrevChapter: () {
+            --_currentChapter;
+            _currentPage = 0;
+            _loadError = false;
+            Future.delayed(Duration.zero).then((_) => setState(() {}));
+          },
+          loadPrevChapter: () async {
+            if (_currentChapter - 1 < 0) return;
+            _rollLoadChapter(_currentChapter - 1);
+          },
+          loadNextChapter: () async {
+            if (_currentChapter + 1 > _chapterList.length - 1) return;
+            _rollLoadChapter(_currentChapter + 1);
+          },
+        );
+        break;
     }
 
     return pageTurningPainter;
+  }
+
+  void _rollLoadChapter(int chapter) async {
+    if (_inLoading) return;
+    if (_chapterPages[chapter] != null) return;
+    _inLoading = true;
+    await Future.delayed(Duration.zero);
+    _showLoading();
+    String content = await widget.getChapterContent(_chapterList[chapter].id);
+    if (content == null || content.isEmpty) {
+      _hideLoading(false);
+      _currentChapter = chapter;
+      return;
+    }
+
+    _chapterContents[chapter] = content;
+    _chapterPages[chapter] = _calcPages(content);
+    _hideLoading();
   }
 
   void _actualToPrev() {
@@ -463,9 +584,16 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   }
 
   void _toChapter(int chapter) {
+    if (_ticker.isActive) {
+      _toPrev = true;
+      _animDistance = -1; // cancel
+      _onTick(Duration(milliseconds: 3000));
+    }
+    _rollPageTurningController?.stopMotion();
     _currentChapter = chapter.clamp(0, _chapterList.length - 1);
     _currentPage = 0;
     _loadError = false;
+    _rollPageTurningController = null;
   }
 
   void _onTick(Duration duration) {
@@ -473,8 +601,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     if (duration.inMilliseconds >= animDurationMs || _animDistance == 0) {
       _ticker.stop();
       setState(() {
-        _inDrag = false;
-        _beginPoint = _currentPoint = _touchStartPoint = null;
+        _resetTouch();
         if (!_toPrev && _animDistance <= 0) {
           _actualToNext();
         } else if (_toPrev && _animDistance >= 0) {
@@ -497,13 +624,17 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
 
   bool _canTurningPage() {
     if (_chapterList.isEmpty) return false;
-    if (_currentChapter < 0 || _currentChapter >= _chapterList.length) return true;
     if (_toPrev) {
       return _currentChapter > 0 || _currentPage > 0;
     } else {
       return _currentChapter < _chapterList.length - 1
-          || _currentPage < _chapterPages[_currentChapter].length - 1;
+          || _currentPage < (_chapterPages[_currentChapter]?.length ?? 1) - 1;
     }
+  }
+
+  void _resetTouch() {
+    _inDrag = false;
+    _beginPoint = _currentPoint = _touchStartPoint = null;
   }
 
   void _onPanUpdate(DragUpdateDetails details) {
@@ -523,7 +654,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
           _toPrev = true;
         }
 
-        if (!_canTurningPage()) {
+        if (_preferences.pageTurning != _PageTurningType.ROLL && !_canTurningPage()) {
           _touchStartPoint = null;
           return;
         }
@@ -543,12 +674,23 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
       } else {
         Fluttertoast.showToast(msg: '没有下一章了');
       }
-
+      _resetTouch();
       return;
     }
 
     if (_currentPoint == null) {
       // on click
+      if (DateTime.now().millisecondsSinceEpoch - _touchStartMilliseconds > 500) {
+        _resetTouch();
+        return;
+      }
+
+      if (_preferences.pageTurning == _PageTurningType.ROLL) {
+        _showLayer(Duration(milliseconds: 100), _toolBarWidget);
+        _resetTouch();
+        return;
+      }
+
       double dx = _touchStartPoint.dx;
       if (dx < _size.width / 3) {
         _toPrev = true;
@@ -562,6 +704,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
         _toPrevPage();
       } else if (dx >= _size.width / 3 && dx < _size.width * 2 / 3) {
         _showLayer(Duration(milliseconds: 100), _toolBarWidget);
+        _resetTouch();
       } else {
         _toPrev = false;
         if (!_canTurningPage()) {
@@ -574,6 +717,11 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
         _toNextPage();
       }
 
+      return;
+    }
+
+    if (_preferences.pageTurning == _PageTurningType.ROLL) {
+      setState(() => _resetTouch());
       return;
     }
 
@@ -597,19 +745,14 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     if (_ticker.isActive) {
       _onTick(Duration(milliseconds: 3000)); // stop
     }
-
+    _rollPageTurningController?.stopMotion();
     _touchStartPoint = details.globalPosition;
+    _touchStartMilliseconds = DateTime.now().millisecondsSinceEpoch;
   }
 
-  Future<void> _timer() async {
-    int times = 0;
-    while (true) {
-      _batteryLevel = await Battery().batteryLevel;
-      setState(() {});
-      await Future.delayed(Duration(seconds: 10));
-      if (!mounted) return; // stop timer after dispose
-      if (++times % 30 == 0) _getChapterList();
-    }
+  void _updateSystemStatus(Timer timer) async {
+    _batteryLevel = await Battery().batteryLevel;
+    setState(() {});
   }
 
   @override
@@ -621,7 +764,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   void initState() {
     _ticker = createTicker(_onTick);
     _restoreState();
-    _timer();
+    _updateSystemStatusTimer = Timer.periodic(Duration(seconds: 5), _updateSystemStatus);
     super.initState();
   }
 
@@ -631,6 +774,9 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
       SystemChrome.setEnabledSystemUIOverlays(SystemUiOverlay.values);
     }
     _progressTimer?.cancel();
+    _updateSystemStatusTimer?.cancel();
+    _refreshChapterListTimer?.cancel();
+    _rollPageTurningController?.stopMotion();
     super.dispose();
   }
 
@@ -684,7 +830,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
 
   Widget _topWidget() {
     return Positioned(
-      top: _safeArea.top + 10,
+      top: _safeArea.top + 8,
       left: _safeArea.left + 15,
       right: _safeArea.right + 15,
       child: Text(
@@ -702,8 +848,11 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   }
 
   Widget _bottomWidget() {
+    int cpage = _currentPage > 0 ? _currentPage + 1 : 1;
+    int tpage = _getTotalPage(_currentChapter);
+
     return Positioned(
-      bottom: _safeArea.bottom + 10,
+      bottom: _safeArea.bottom + 5,
       left: _safeArea.left + 15,
       right: _safeArea.right + 15,
       child: Row(
@@ -745,7 +894,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
             ],
           ),
           Text(
-            '第${_currentPage > 0 ? _currentPage + 1 : 1}/${_chapterPages[_currentChapter]?.length ?? 1}页',
+            '第${cpage.clamp(1, tpage)}/$tpage页',
             style: TextStyle(
               color: _preferences.realFontColor.withOpacity(0.6),
               fontSize: 12,
@@ -1079,9 +1228,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
                         size: 23,
                         color: Colors.black54,
                         onPressed: () async {
-                          _showLoading();
-                          await _getChapterList();
-                          _hideLoading();
+                          await _getChapterList(true);
                         },
                       ),
                     ],
@@ -1176,6 +1323,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
               children: <Widget>[
                 FlatButton(onPressed: () {setPreferences(ReaderPreferences(pageTurning: _PageTurningType.COVERAGE));}, child: Text('覆盖')),
                 FlatButton(onPressed: () {setPreferences(ReaderPreferences(pageTurning: _PageTurningType.SIMULATION));}, child: Text('仿真')),
+                FlatButton(onPressed: () {setPreferences(ReaderPreferences(pageTurning: _PageTurningType.ROLL));}, child: Text('上下')),
               ],
             ),
           ],
@@ -1188,6 +1336,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     var stopTimer = () {
       _progressTimer?.cancel();
       _progressTimer = null;
+      if (_progressTempChapter == _currentChapter) _progressTempChapter = null;
       if (_progressTempChapter == null) return;
       Future.delayed(Duration.zero, () => setState(() {
         _toChapter(_progressTempChapter);
@@ -1352,6 +1501,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     Size size = MediaQuery.of(context).size;
     EdgeInsets safeArea = MediaQuery.of(context).padding;
     bool needReCalcPages = false;
+    PageTurningPainter painter;
 
     if (safeArea != _safeArea) {
       _safeArea = safeArea;
@@ -1365,7 +1515,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
 
     if (needReCalcPages) _reCalcPages();
 
-    if (size == Size.zero || _preferences == null) {
+    if (size == Size.zero || _preferences == null || (painter = _getPageTurningPainter()) == null) {
       children.add(Container(
         color: _preferences?.realBackground,
       ));
@@ -1379,7 +1529,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
             size: size,
             isComplex: true,
             willChange: _inDrag,
-            painter: _getPageTurningPainter(),
+            painter: painter,
           ),
         ),
       ));

@@ -20,6 +20,10 @@ bool _isHeightEnough(TextSpan text, Size size, EdgeInsets padding) {
 
 Picture _getPicture(TextSpan text, Size size, EdgeInsets padding) {
   TextPainter painter = _getTextPainter(text, size, padding);
+  return _getPictureByPainter(painter, padding);
+}
+
+Picture _getPictureByPainter(TextPainter painter, EdgeInsets padding) {
   PictureRecorder pictureRecorder = PictureRecorder();
   Canvas canvas = Canvas(pictureRecorder);
   painter.paint(canvas, Offset(padding.left, padding.top));
@@ -77,4 +81,32 @@ List<Picture> calcPages({
   }
 
   return pages;
+}
+
+List calcPageForRoll({
+  @required String content,
+  @required double fontSize,
+  String fontFamily,
+  @required FontWeight fontWeight,
+  @required Color color,
+  @required double height,
+  @required Size size,
+  @required EdgeInsets padding,
+}) {
+  TextStyle style = TextStyle(
+    fontSize: fontSize,
+    fontFamily: fontFamily,
+    fontWeight: fontWeight,
+    height: height,
+    color: color,
+  );
+  List page = [];
+  TextPainter painter = _getTextPainter(TextSpan(
+    text: content,
+    style: style,
+  ), size, padding);
+  page.add(_getPictureByPainter(painter, padding));
+  page.add(painter.height.clamp(size.height, double.infinity));
+  page.add((page[1] / size.height).ceil());
+  return page;
 }

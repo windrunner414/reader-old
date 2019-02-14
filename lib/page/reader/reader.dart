@@ -1263,7 +1263,6 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
                                       ? const Color.fromRGBO(98, 106, 115, 1)
                                       : const Color.fromRGBO(162, 171, 179, 1)),
                                 fontSize: 14,
-                                height: 0.8,
                               ),
                               softWrap: true,
                               maxLines: 2,
@@ -1280,7 +1279,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
                   ),
                   Positioned(
                     top: scrollProgress * (listViewHeight - 27),
-                    right: 1,
+                    right: 0,
                     child: GestureDetector(
                       onVerticalDragUpdate: (DragUpdateDetails details) {
                         double p = details.primaryDelta / (listViewHeight - 27) * maxScrollOffset;
@@ -1288,14 +1287,14 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
                         _chapterListScrollController.jumpTo(value);
                       },
                       child: Container(
-                        width: 15,
+                        width: 20,
                         height: 27,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(2),
                           boxShadow: [BoxShadow(color: Colors.black54, blurRadius: 1)],
                           color: const Color.fromRGBO(245, 245, 245, 1),
                         ),
-                        child: Icon(Icons.menu, size: 14, color: Colors.black26),
+                        child: Icon(Icons.menu, size: 15, color: Colors.black26),
                       ),
                     ),
                   ),
@@ -1355,138 +1354,146 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     return Positioned(
       left: 0,
       right: 0,
-      bottom: (105 + _safeArea.bottom) * (_animDistance - 1),
-      height: (105 + _safeArea.bottom),
+      bottom: (140 + _safeArea.bottom) * (_animDistance - 1),
+      height: (140 + _safeArea.bottom),
       child: Stack(
         children: <Widget>[
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 55 + _safeArea.bottom,
-            child: Center(
-              child: Container(
-                height: 50,
-                padding: const EdgeInsets.fromLTRB(15, 0, 15, 0),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: <Widget>[
-                    Text(
-                      _chapterList[
-                      (_progressTempChapter ?? _currentChapter).clamp(0, _chapterList.length - 1)
-                      ].title,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: const Color.fromRGBO(51, 153, 255, 1),
-                        fontWeight: FontWeight.normal,
-                        decoration: TextDecoration.none,
+          Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: <Widget>[
+              Center(
+                child: Container(
+                  height: 65,
+                  padding: const EdgeInsets.fromLTRB(15, 4, 15, 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: <Widget>[
+                      Text(
+                        _chapterList[
+                        (_progressTempChapter ?? _currentChapter).clamp(0, _chapterList.length - 1)
+                        ].title,
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: const Color.fromRGBO(51, 153, 255, 1),
+                          fontWeight: FontWeight.normal,
+                          decoration: TextDecoration.none,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      Text(
+                        _chapterList.length == 1 ? '100%' : '${(((_progressTempChapter ?? _currentChapter)
+                            .clamp(0, _chapterList.length - 1)) / (_chapterList.length - 1) * 100)
+                            .toStringAsFixed(2)}%',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: const Color.fromRGBO(51, 153, 255, 1),
+                          fontWeight: FontWeight.normal,
+                          decoration: TextDecoration.none,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Container(
+                height: 60 + _safeArea.bottom,
+                padding: EdgeInsets.fromLTRB(_safeArea.left + 15, 0, _safeArea.right + 15, _safeArea.bottom),
+                color: Colors.white,
+                child: Row(
+                  children: <Widget>[
+                    GestureDetector(
+                      onTapDown: (_) {
+                        _progressTimer?.cancel();
+                        _progressTimer = Timer(Duration(milliseconds: 500), () {
+                          startTimer(() => --_progressTempChapter);
+                        });
+                      },
+                      onTapUp: (_) {
+                        if (_progressTimer == null) return;
+                        if (_progressTimer.tick == 0) {
+                          _progressTempChapter ??= _currentChapter;
+                          if (_progressTempChapter <= 0) Fluttertoast.showToast(msg: '没有上一章了');
+                          else --_progressTempChapter;
+                        }
+                        stopTimer();
+                      },
+                      onTapCancel: stopTimer,
+                      child: Text(
+                        '上一章',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: const Color.fromRGBO(51, 153, 255, 1),
+                          fontWeight: FontWeight.normal,
+                          decoration: TextDecoration.none,
+                        ),
+                      ),
                     ),
-                    Text(
-                      _chapterList.length == 1 ? '100%' : '${(((_progressTempChapter ?? _currentChapter)
-                        .clamp(0, _chapterList.length - 1)) / (_chapterList.length - 1) * 100)
-                        .toStringAsFixed(2)}%',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: const Color.fromRGBO(51, 153, 255, 1),
-                        fontWeight: FontWeight.normal,
-                        decoration: TextDecoration.none,
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(15, 0, 15, 0),
+                        child: SeekBar(
+                          progresseight: 6,
+                          min: 0,
+                          max: _chapterList.length.toDouble(),
+                          value: _progressTempChapter?.toDouble() ?? _currentChapter.toDouble(),
+                          onValueChanged: (ProgressValue value, bool isEnd) {
+                            _progressTimer?.cancel();
+                            _progressTempChapter = value.value.round();
+                            if (isEnd) {
+                              stopTimer();
+                            } else {
+                              setState(() {});
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTapDown: (_) {
+                        _progressTimer?.cancel();
+                        _progressTimer = Timer(Duration(milliseconds: 500), () {
+                          startTimer(() => ++_progressTempChapter);
+                        });
+                      },
+                      onTapUp: (_) {
+                        if (_progressTimer == null) return;
+                        if (_progressTimer.tick == 0) {
+                          _progressTempChapter ??= _currentChapter;
+                          if (_progressTempChapter >= _chapterList.length - 1) Fluttertoast.showToast(msg: '没有下一章了');
+                          else ++_progressTempChapter;
+                        }
+                        stopTimer();
+                      },
+                      onTapCancel: stopTimer,
+                      child: Text(
+                        '下一章',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: const Color.fromRGBO(51, 153, 255, 1),
+                          fontWeight: FontWeight.normal,
+                          decoration: TextDecoration.none,
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
-            ),
+            ],
           ),
           Positioned(
+            top: 44,
             left: 0,
             right: 0,
-            bottom: 0,
-            child: Container(
-              height: 40 + _safeArea.bottom,
-              padding: EdgeInsets.fromLTRB(_safeArea.left + 15, 0, _safeArea.right + 15, _safeArea.bottom),
-              color: Colors.white,
-              child: Row(
-                children: <Widget>[
-                  GestureDetector(
-                    onTapDown: (_) {
-                      _progressTimer?.cancel();
-                      _progressTimer = Timer(Duration(milliseconds: 500), () {
-                        startTimer(() => --_progressTempChapter);
-                      });
-                    },
-                    onTapUp: (_) {
-                      if (_progressTimer == null) return;
-                      if (_progressTimer.tick == 0) {
-                        _progressTempChapter ??= _currentChapter;
-                        if (_progressTempChapter <= 0) Fluttertoast.showToast(msg: '没有上一章了');
-                        else --_progressTempChapter;
-                      }
-                      stopTimer();
-                    },
-                    onTapCancel: stopTimer,
-                    child: Text(
-                      '上一章',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: const Color.fromRGBO(51, 153, 255, 1),
-                        fontWeight: FontWeight.normal,
-                        decoration: TextDecoration.none,
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(15, 0, 15, 0),
-                      child: SeekBar(
-                        min: 0,
-                        max: _chapterList.length.toDouble(),
-                        value: _progressTempChapter?.toDouble() ?? _currentChapter.toDouble(),
-                        onValueChanged: (ProgressValue value, bool isEnd) {
-                          _progressTimer?.cancel();
-                          _progressTempChapter = value.value.round();
-                          if (isEnd) {
-                            stopTimer();
-                          } else {
-                            setState(() {});
-                          }
-                        },
-                      ),
-                    ),
-                  ),
-                  GestureDetector(
-                    onTapDown: (_) {
-                      _progressTimer?.cancel();
-                      _progressTimer = Timer(Duration(milliseconds: 500), () {
-                        startTimer(() => ++_progressTempChapter);
-                      });
-                    },
-                    onTapUp: (_) {
-                      if (_progressTimer == null) return;
-                      if (_progressTimer.tick == 0) {
-                        _progressTempChapter ??= _currentChapter;
-                        if (_progressTempChapter >= _chapterList.length - 1) Fluttertoast.showToast(msg: '没有下一章了');
-                        else ++_progressTempChapter;
-                      }
-                      stopTimer();
-                    },
-                    onTapCancel: stopTimer,
-                    child: Text(
-                      '下一章',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: const Color.fromRGBO(51, 153, 255, 1),
-                        fontWeight: FontWeight.normal,
-                        decoration: TextDecoration.none,
-                      ),
-                    ),
-                  ),
-                ],
+            child: Center(
+              child: Icon(
+                Icons.arrow_drop_down,
+                size: 46,
+                color: Colors.white,
               ),
             ),
           ),

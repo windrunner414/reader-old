@@ -154,16 +154,6 @@ class RollPageTurningPainter extends PageTurningPainter {
       controller.lastTouchMilliseconds = milliseconds;
     }
 
-    if (controller.initialPage == null) {
-      double pageOffset = controller.scrollOffset.clamp(0.0, currentChapter[1]);
-      int page = pageOffset ~/ scrollHeight;
-
-      if (page != controller.page) {
-        controller.page = page;
-        onPageChange(page);
-      }
-    }
-
     if (!inLoading) {
       if (controller.scrollOffset < 0) {
         controller.stopMotion();
@@ -202,6 +192,16 @@ class RollPageTurningPainter extends PageTurningPainter {
             }
           }
         }
+      }
+    }
+
+    if (controller.initialPage == null) {
+      double pageOffset = controller.scrollOffset.clamp(0.0, currentChapter[1]);
+      int page = pageOffset ~/ scrollHeight;
+
+      if (page != controller.page) {
+        controller.page = page;
+        onPageChange(page);
       }
     }
 

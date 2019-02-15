@@ -154,6 +154,8 @@ class RollPageTurningPainter extends PageTurningPainter {
       controller.lastTouchMilliseconds = milliseconds;
     }
 
+    double scrollOffsetAfterPaint;
+
     if (!inLoading) {
       if (controller.scrollOffset < 0) {
         controller.stopMotion();
@@ -172,7 +174,8 @@ class RollPageTurningPainter extends PageTurningPainter {
           }
         }
       } else if (controller.scrollOffset >= currentChapter[1]) {
-        controller.scrollOffset = 0;
+        controller.scrollOffset = currentChapter[1];
+        scrollOffsetAfterPaint = 0;
         controller.stopMotion();
         toNextChapter();
       } else if (controller.scrollOffset > currentChapter[1] - scrollHeight) {
@@ -182,7 +185,8 @@ class RollPageTurningPainter extends PageTurningPainter {
         } else {
           if (currentChapter[0] == null) {
             controller.stopMotion();
-            controller.scrollOffset = 0;
+            controller.scrollOffset = currentChapter[1] - scrollHeight;
+            scrollOffsetAfterPaint = 0;
             toNextChapter();
           } else {
             if (nextChapter[0] == null) {
@@ -223,6 +227,8 @@ class RollPageTurningPainter extends PageTurningPainter {
     canvas.translate(0, currentChapter[1]);
     if (nextChapter[0] != null) canvas.drawPicture(nextChapter[0]);
     canvas.restore();
+
+    if (scrollOffsetAfterPaint != null) controller.scrollOffset = scrollOffsetAfterPaint;
   }
 
   @override

@@ -202,6 +202,10 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     });
   }
 
+  void _setFullScreen(bool fullScreen) {
+    SystemChrome.setEnabledSystemUIOverlays(fullScreen ? [SystemUiOverlay.bottom] : SystemUiOverlay.values);
+  }
+
   Future<bool> _saveReadProgress() async {
     return LocalStorage.setStringList('read_progress_${widget.bookId}', ['$_currentChapter', '$_currentPage']);
   }
@@ -222,11 +226,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     }
 
     if (_layer.isEmpty) {
-      if (_preferences.fullScreen) {
-        SystemChrome.setEnabledSystemUIOverlays([SystemUiOverlay.bottom]);
-      } else {
-        SystemChrome.setEnabledSystemUIOverlays(SystemUiOverlay.values);
-      }
+      _setFullScreen(_preferences.fullScreen);
     }
 
     setState(() => _reCalcPages());
@@ -771,7 +771,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   @override
   void dispose() {
     if (_preferences.fullScreen) {
-      SystemChrome.setEnabledSystemUIOverlays(SystemUiOverlay.values);
+      _setFullScreen(false);
     }
     _progressTimer?.cancel();
     _updateSystemStatusTimer?.cancel();
@@ -1108,7 +1108,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
 
   TickerFuture _showLayer(Duration duration, _layerBuilder builder) {
     if (_ticker.isActive) _onTick(Duration(milliseconds: 3000));
-    if (_preferences.fullScreen) SystemChrome.setEnabledSystemUIOverlays(SystemUiOverlay.values);
+    if (_preferences.fullScreen) _setFullScreen(false);
     _animDistance = 0;
 
     _layer = [
@@ -1151,7 +1151,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
         if (d.inMilliseconds >= duration.inMilliseconds) {
           _animDistance = 0;
           _layer.clear();
-          if (_preferences.fullScreen) SystemChrome.setEnabledSystemUIOverlays([SystemUiOverlay.bottom]);
+          if (_preferences.fullScreen) _setFullScreen(true);
           ticker.stop();
         } else {
           _animDistance = 1 - d.inMilliseconds / duration.inMilliseconds;
@@ -1364,7 +1364,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
               Center(
                 child: Container(
                   height: 65,
-                  padding: const EdgeInsets.fromLTRB(15, 4, 15, 4),
+                  padding: EdgeInsets.fromLTRB(15 + _safeArea.left, 4, 15 + _safeArea.right, 4),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(3),

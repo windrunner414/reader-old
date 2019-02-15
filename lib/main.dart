@@ -4,7 +4,7 @@ import 'dart:math';
 import 'package:flutter/services.dart';
 
 void main() {
-  SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
+  //SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
   runApp(MyApp());
 }
 

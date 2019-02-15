@@ -186,6 +186,8 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     _size.height - _safeArea.top - _safeArea.bottom - _pagePadding.top - _pagePadding.bottom;
   EdgeInsets _pagePadding = const EdgeInsets.fromLTRB(15, 30, 15, 30);
 
+  PageTurningPainter _painter;
+
   void _showLoading() {
     setState(() {
       _inLoading = true;
@@ -540,7 +542,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
 
   void _toPrevPage() {
     _toPrev = true;
-    _animDistance = _size.width - _currentPoint.dx + _beginPoint.dx;
+    _animDistance = 2 * _size.width - _currentPoint.dx;
     _animDistance2 = 0;
     _ticker.start();
   }
@@ -557,21 +559,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
 
   void _toNextPage() {
     _toPrev = false;
-    _animDistance = -_currentPoint.dx - _size.width + _beginPoint.dx;
-    _animDistance2 = 0;
-    _ticker.start();
-  }
-
-  void _cancelToPrevPage() {
-    _toPrev = true;
-    _animDistance = -_size.width;
-    _animDistance2 = 0;
-    _ticker.start();
-  }
-
-  void _cancelToNextPage() {
-    _toPrev = false;
-    _animDistance = _size.width;
+    _animDistance = -_currentPoint.dx - _size.width;
     if (_currentPoint.dy < _size.height / 3) {
       _animDistance2 = -_currentPoint.dy;
     } else if (_currentPoint.dy >= _size.height * 2 / 3) {
@@ -579,7 +567,27 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     } else {
       _animDistance2 = 0;
     }
-    _animDistance2 *= _size.width / (_size.width - _currentPoint.dx);
+    _ticker.start();
+  }
+
+  void _cancelToPrevPage() {
+    _toPrev = true;
+    _animDistance = -_currentPoint.dx - _size.width;
+    _animDistance2 = 0;
+    _ticker.start();
+  }
+
+  void _cancelToNextPage() {
+    _toPrev = false;
+    _animDistance = 2 * _size.width - _currentPoint.dx;
+    if (_currentPoint.dy < _size.height / 3) {
+      _animDistance2 = -_currentPoint.dy;
+    } else if (_currentPoint.dy >= _size.height * 2 / 3) {
+      _animDistance2 = _size.height - _currentPoint.dy;
+    } else {
+      _animDistance2 = 0;
+    }
+    _animDistance2 *= _animDistance / (_size.width - _currentPoint.dx);
     _ticker.start();
   }
 
@@ -587,7 +595,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     if (_ticker.isActive) {
       _toPrev = true;
       _animDistance = -1; // cancel
-      _onTick(Duration(milliseconds: 3000));
+      _onTick(Duration(milliseconds: -1));
     }
     _rollPageTurningController?.stopMotion();
     _currentChapter = chapter.clamp(0, _chapterList.length - 1);
@@ -597,8 +605,19 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   }
 
   void _onTick(Duration duration) {
-    int animDurationMs = 300;
-    if (duration.inMilliseconds >= animDurationMs || _animDistance == 0) {
+    int animDurationMs;
+    switch (_preferences.pageTurning) {
+      case _PageTurningType.ROLL:
+        return;
+      case _PageTurningType.SIMULATION:
+        animDurationMs = 1800;
+        break;
+      case _PageTurningType.COVERAGE:
+        animDurationMs = 2600;
+        break;
+    }
+
+    if (duration.inMicroseconds < 0 || duration.inMilliseconds >= animDurationMs || _animDistance == 0) {
       _ticker.stop();
       setState(() {
         _resetTouch();
@@ -743,7 +762,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
 
   void _onPanDown(DragDownDetails details) {
     if (_ticker.isActive) {
-      _onTick(Duration(milliseconds: 3000)); // stop
+      _onTick(Duration(milliseconds: -1)); // stop
     }
     _rollPageTurningController?.stopMotion();
     _touchStartPoint = details.globalPosition;
@@ -1107,7 +1126,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   }
 
   TickerFuture _showLayer(Duration duration, _layerBuilder builder) {
-    if (_ticker.isActive) _onTick(Duration(milliseconds: 3000));
+    if (_ticker.isActive) _onTick(Duration(milliseconds: -1));
     if (_preferences.fullScreen) _setFullScreen(false);
     _animDistance = 0;
 
@@ -1508,7 +1527,13 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     Size size = MediaQuery.of(context).size;
     EdgeInsets safeArea = MediaQuery.of(context).padding;
     bool needReCalcPages = false;
-    PageTurningPainter painter;
+
+    if (_painter != null) {
+      if (_ticker.isActive && _painter.isAnimEnd) {
+        _onTick(Duration(milliseconds: -1));
+      }
+      _painter = null;
+    }
 
     if (safeArea != _safeArea) {
       _safeArea = safeArea;
@@ -1522,7 +1547,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
 
     if (needReCalcPages) _reCalcPages();
 
-    if (size == Size.zero || _preferences == null || (painter = _getPageTurningPainter()) == null) {
+    if (size == Size.zero || _preferences == null || (_painter = _getPageTurningPainter()) == null) {
       children.add(Container(
         color: _preferences?.realBackground,
       ));
@@ -1536,7 +1561,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
             size: size,
             isComplex: true,
             willChange: _inDrag,
-            painter: painter,
+            painter: _painter,
           ),
         ),
       ));

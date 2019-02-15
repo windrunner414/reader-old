@@ -18,7 +18,16 @@ class SimulationPageTurningPainter extends PageTurningPainter {
   final bool toPrev;
   Size size;
   Canvas canvas;
+
+  @override
   bool get painted => size != null;
+  @override
+  bool get isAnimEnd => _pathA == null ? false : (
+    (_pathA.contains(Offset(0, 0)) && _pathA.contains(Offset(size.width, 0))
+      && _pathA.contains(Offset(0, size.height)) && _pathA.contains(Offset(size.width, size.height)))
+    || (_pathC.contains(Offset(0, 0)) && _pathC.contains(Offset(size.width, 0))
+        && _pathC.contains(Offset(0, size.height)) && _pathC.contains(Offset(size.width, size.height)))
+  );
 
   _AnimType _type;
   Path _pathAll, _pathA, _pathB, _pathC, _pathD;

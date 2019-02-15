@@ -13,6 +13,8 @@ class RollPageTurningController {
   AnimationController _animationController;
   double velocity;
 
+  bool get isAnimEnd => _animationController == null;
+
   void scroll(double offset) {
     scrollOffset += offset;
     initialPage = null;
@@ -73,7 +75,10 @@ class RollPageTurningController {
 class RollPageTurningPainter extends PageTurningPainter {
   Size size;
   Canvas canvas;
+  @override
   bool get painted => size != null;
+  @override
+  bool get isAnimEnd => controller.isAnimEnd;
   final RollPageTurningController controller;
   final EdgeInsets padding;
   final VoidCallback toNextChapter, toPrevChapter, loadNextChapter, loadPrevChapter;

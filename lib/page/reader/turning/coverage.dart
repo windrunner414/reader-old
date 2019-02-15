@@ -9,7 +9,12 @@ class CoveragePageTurningPainter extends PageTurningPainter {
   final Picture prevPage, currentPage, nextPage;
   Size size;
   Canvas canvas;
+
+  double get _dx => toPrev ? touchPoint.dx - beginTouchPoint.dx : size.width - beginTouchPoint.dx + touchPoint.dx;
+  @override
   bool get painted => size != null;
+  @override
+  bool get isAnimEnd => (touchPoint == null || beginTouchPoint == null || size == null) ? false : (_dx < -5 || _dx > size.width);
 
   static final shadow = Shadow(color: const Color.fromRGBO(0, 0, 0, 0.5), blurRadius: 5).toPaint();
 
@@ -34,8 +39,8 @@ class CoveragePageTurningPainter extends PageTurningPainter {
       return;
     }
 
-    double dx = toPrev ? touchPoint.dx - beginTouchPoint.dx : size.width - beginTouchPoint.dx + touchPoint.dx;
-    if (!toPrev && dx > size.width) dx = size.width;
+    double dx = _dx;
+    if (dx > size.width) dx = size.width;
 
     canvas.clipPath(Path()
       ..lineTo(size.width, 0)

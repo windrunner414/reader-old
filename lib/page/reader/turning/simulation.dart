@@ -39,15 +39,9 @@ class SimulationPageTurningPainter extends PageTurningPainter {
   });
 
   Offset _calcPointA(Offset ap) {
-    if (ap.dx <= 0) ap = Offset(0.1, ap.dy);
-    else if (ap.dx >= size.width) ap = Offset(size.width - 0.1, ap.dy);
-
     if (_type == _AnimType.RIGHT_MIDDLE || _type == _AnimType.LEFT) {
       return Offset(ap.dx, size.height / 2 - 0.1);
     }
-
-    if (ap.dy <= 0) ap = Offset(ap.dx, 0.1);
-    else if (ap.dy >= size.height) ap = Offset(ap.dx, size.height - 0.1);
 
     return ap;
   }
@@ -125,7 +119,7 @@ class SimulationPageTurningPainter extends PageTurningPainter {
     a = _calcPointA(touchPoint);
     _calcPointXY();
 
-    if (c.dx < 0) {
+    if (c.dx < 0 && a.dx.clamp(0.0, size.width) == a.dx && a.dy.clamp(0.0, size.height) == a.dy) {
       _calcPointAByTouchPoint();
       _calcPointXY();
     }

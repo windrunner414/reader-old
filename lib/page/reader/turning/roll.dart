@@ -73,12 +73,9 @@ class RollPageTurningController {
 }
 
 class RollPageTurningPainter extends PageTurningPainter {
-  Size size;
-  Canvas canvas;
-  @override
-  bool get painted => size != null;
   @override
   bool get isAnimEnd => controller.isAnimEnd;
+
   final RollPageTurningController controller;
   final EdgeInsets padding;
   final VoidCallback toNextChapter, toPrevChapter, loadNextChapter, loadPrevChapter;

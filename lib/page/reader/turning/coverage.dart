@@ -7,12 +7,8 @@ class CoveragePageTurningPainter extends PageTurningPainter {
   final bool toPrev;
   final Color background;
   final Picture prevPage, currentPage, nextPage;
-  Size size;
-  Canvas canvas;
 
   double get _dx => toPrev ? touchPoint.dx - beginTouchPoint.dx : size.width - beginTouchPoint.dx + touchPoint.dx;
-  @override
-  bool get painted => size != null;
   @override
   bool get isAnimEnd => (touchPoint == null || beginTouchPoint == null || size == null) ? false : (_dx < -5 || _dx > size.width);
 

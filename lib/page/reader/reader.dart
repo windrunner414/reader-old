@@ -30,6 +30,7 @@ enum _PageTurningType {
   COVERAGE,
   SIMULATION,
   ROLL,
+  NONE,
 }
 
 class ReaderPreferences {
@@ -464,6 +465,12 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
           toPrev: _toPrev,
         );
         break;
+      case _PageTurningType.NONE:
+        pageTurningPainter = NonePageTurningPainter(
+          background: _preferences.realBackground,
+          currentPage: pages[1],
+        );
+        break;
       case _PageTurningType.ROLL:
         if (_rollPageTurningController == null) {
           _rollPageTurningController = RollPageTurningController(
@@ -614,6 +621,9 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
         break;
       case _PageTurningType.COVERAGE:
         animDurationMs = 2600;
+        break;
+      case _PageTurningType.NONE:
+        animDurationMs = 0;
         break;
     }
 
@@ -1342,6 +1352,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
                 FlatButton(onPressed: () {setPreferences(ReaderPreferences(pageTurning: _PageTurningType.COVERAGE));}, child: Text('覆盖')),
                 FlatButton(onPressed: () {setPreferences(ReaderPreferences(pageTurning: _PageTurningType.SIMULATION));}, child: Text('仿真')),
                 FlatButton(onPressed: () {setPreferences(ReaderPreferences(pageTurning: _PageTurningType.ROLL));}, child: Text('上下')),
+                FlatButton(onPressed: () {setPreferences(ReaderPreferences(pageTurning: _PageTurningType.NONE));}, child: Text('无')),
               ],
             ),
           ],

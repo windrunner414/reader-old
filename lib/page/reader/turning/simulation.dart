@@ -16,11 +16,7 @@ class SimulationPageTurningPainter extends PageTurningPainter {
   final Picture prevPage, currentPage, nextPage;
   final Color background;
   final bool toPrev;
-  Size size;
-  Canvas canvas;
 
-  @override
-  bool get painted => size != null;
   @override
   bool get isAnimEnd => _pathA == null ? false : (
     (_pathA.contains(Offset(0, 0)) && _pathA.contains(Offset(size.width, 0))

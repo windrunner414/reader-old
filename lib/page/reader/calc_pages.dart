@@ -1,36 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
 
-TextPainter _getTextPainter(TextSpan text, Size size, EdgeInsets padding) {
-  return TextPainter(
-    textDirection: TextDirection.ltr,
-    text: text,
-  )..layout(maxWidth: size.width - padding.left - padding.right);
-}
-
-bool _isHeightEnough(TextSpan text, Size size, EdgeInsets padding) {
-  TextPainter painter = _getTextPainter(text, size, padding);
-
-  if (painter.height <= size.height - padding.top - padding.bottom) {
-    return true;
-  } else {
-    return false;
-  }
-}
-
-Picture _getPicture(TextSpan text, Size size, EdgeInsets padding) {
-  TextPainter painter = _getTextPainter(text, size, padding);
-  return _getPictureByPainter(painter, padding);
-}
-
-Picture _getPictureByPainter(TextPainter painter, EdgeInsets padding) {
-  PictureRecorder pictureRecorder = PictureRecorder();
-  Canvas canvas = Canvas(pictureRecorder);
-  painter.paint(canvas, Offset(padding.left, padding.top));
-  return pictureRecorder.endRecording();
-}
-
-List<Picture> calcPages({
+List calcPages({
   @required String content,
   @required double fontSize,
   String fontFamily,
@@ -39,74 +10,70 @@ List<Picture> calcPages({
   @required double height,
   @required Size size,
   @required EdgeInsets padding,
+  @required bool isRoll,
 }) {
-  TextStyle style = TextStyle(
+  TextStyle textStyle = TextStyle(
     fontSize: fontSize,
     fontFamily: fontFamily,
     fontWeight: fontWeight,
     height: height,
     color: color,
   );
-  List<Picture> pages = [];
-  int tBegin = 0;
 
-  while (tBegin < content.length) {
-    if (content[tBegin] == "\n") {
-      ++tBegin;
-      continue;
-    }
-
-    int begin = tBegin, end = content.length;
-
-    while (begin != end) {
-      int curr = (begin + end) ~/ 2;
-      if (begin == curr) curr = end;
-
-      if (_isHeightEnough(TextSpan(
-        text: content.substring(tBegin, curr),
-        style: style,
-      ), size, padding)) {
-        begin = curr;
-      } else {
-        end = curr - 1;
-      }
-    }
-
-    pages.add(_getPicture(TextSpan(
-      text: content.substring(tBegin, begin),
-      style: style,
-    ), size, padding));
-
-    tBegin = begin;
-  }
-
-  return pages;
-}
-
-List calcPageForRoll({
-  @required String content,
-  @required double fontSize,
-  String fontFamily,
-  @required FontWeight fontWeight,
-  @required Color color,
-  @required double height,
-  @required Size size,
-  @required EdgeInsets padding,
-}) {
-  TextStyle style = TextStyle(
+  StrutStyle strutStyle = StrutStyle(
     fontSize: fontSize,
     fontFamily: fontFamily,
     fontWeight: fontWeight,
     height: height,
-    color: color,
+    forceStrutHeight: true,
   );
-  List page = [];
-  TextPainter painter = _getTextPainter(TextSpan(
+
+  TextSpan textSpan = TextSpan(
     text: content,
-    style: style,
-  ), size, padding);
-  page.add(_getPictureByPainter(painter, padding));
-  page.add(painter.height.clamp(size.height, double.infinity));
-  page.add((page[1] / size.height).ceil());
-  return page;
+    style: textStyle,
+  );
+
+  TextPainter textPainter = TextPainter(
+    text: textSpan,
+    strutStyle: strutStyle,
+    textDirection: TextDirection.ltr,
+  )..layout(maxWidth: size.width - padding.left - padding.right);
+
+  if (isRoll) {
+    List page = List(3);
+    PictureRecorder pictureRecorder = PictureRecorder();
+    Canvas canvas = Canvas(pictureRecorder);
+    textPainter.paint(canvas, Offset(padding.left, padding.top));
+
+    page[0] = pictureRecorder.endRecording();
+    page[1] = textPainter.height.clamp(size.height, double.infinity);
+    page[2] = (page[1] / size.height).ceil();
+
+    return page;
+  } else {
+    double textHeight = textPainter.height;
+    double lineHeight = textPainter.preferredLineHeight;
+    double pageHeight = size.height - padding.top - padding.bottom;
+    int lineNumber = textHeight ~/ lineHeight;
+    int lineNumberPerPage = pageHeight ~/ lineHeight;
+    int pageNum = (lineNumber / lineNumberPerPage).ceil();
+    double actualPageHeight = lineNumberPerPage * lineHeight;
+
+    List<Picture> pages = List<Picture>(pageNum);
+    for (int i = 0; i < pageNum; ++i) {
+      PictureRecorder pictureRecorder = PictureRecorder();
+      Canvas canvas = Canvas(pictureRecorder);
+      canvas.clipPath(Path()
+        ..moveTo(padding.left, padding.top)
+        ..lineTo(size.width - padding.right, padding.top)
+        ..lineTo(size.width - padding.right, padding.top + actualPageHeight)
+        ..lineTo(padding.left, padding.top + actualPageHeight)
+        ..close());
+      canvas.translate(padding.left, -i * actualPageHeight + padding.top);
+      textPainter.paint(canvas, Offset(0, 0));
+      pages[i] = pictureRecorder.endRecording();
+    }
+
+    return pages;
+  }
 }

@@ -50,9 +50,9 @@ class ReaderPreferences {
     pageTurning: _PageTurningType.COVERAGE,
     background: Color.fromRGBO(213, 239, 210, 1),
     fontColor: Colors.black87,
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: FontWeight.normal,
-    height: 1.15,
+    height: 1.3,
     fullScreen: true,
     nightMode: false,
   );
@@ -280,27 +280,18 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   }
 
   List _calcPages(String content) {
-    if (_preferences.pageTurning == _PageTurningType.ROLL) return _calcPageForRoll(content);
+    bool isRoll = _preferences.pageTurning == _PageTurningType.ROLL;
     return calcPages(
       content: content,
       fontSize: _preferences.fontSize,
       fontWeight: _preferences.fontWeight,
       color: _preferences.realFontColor,
       height: _preferences.height,
-      size: _size,
-      padding: _pagePadding.add(_safeArea),
-    );
-  }
-
-  List _calcPageForRoll(String content) {
-    return calcPageForRoll(
-      content: content,
-      fontSize: _preferences.fontSize,
-      fontWeight: _preferences.fontWeight,
-      color: _preferences.realFontColor,
-      height: _preferences.height,
-      size: Size(_size.width, _rollPageTurningScrollHeight),
-      padding: EdgeInsets.fromLTRB(_pagePadding.left + _safeArea.left, 0, _pagePadding.right + _safeArea.right, 0),
+      size: isRoll ? Size(_size.width, _rollPageTurningScrollHeight) : _size,
+      padding: isRoll
+        ? EdgeInsets.fromLTRB(_pagePadding.left + _safeArea.left, 0, _pagePadding.right + _safeArea.right, 0)
+        : _pagePadding.add(_safeArea),
+      isRoll: isRoll,
     );
   }
 

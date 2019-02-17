@@ -177,6 +177,8 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   Map<int, int> _cachingChapters = {};
 
   EdgeInsets _safeArea = EdgeInsets.zero;
+  EdgeInsets __pageSafeArea;
+  EdgeInsets get _pageSafeArea => __pageSafeArea ?? _safeArea;
   int _batteryLevel = 100;
 
   List<_layerBuilder> _layer = [];
@@ -189,7 +191,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
 
   RollPageTurningController _rollPageTurningController;
   double get _rollPageTurningScrollHeight =>
-    _size.height - _safeArea.top - _safeArea.bottom - _pagePadding.top - _pagePadding.bottom;
+    _size.height - _pageSafeArea.top - _pageSafeArea.bottom - _pagePadding.top - _pagePadding.bottom;
   EdgeInsets _pagePadding = const EdgeInsets.fromLTRB(15, 30, 15, 30);
 
   PageTurningPainter _painter;
@@ -295,8 +297,8 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
       paragraphHeight: _preferences.paragraphHeight,
       size: isRollPageTurning ? Size(_size.width, _rollPageTurningScrollHeight) : _size,
       padding: isRollPageTurning
-        ? EdgeInsets.fromLTRB(_pagePadding.left + _safeArea.left, 0, _pagePadding.right + _safeArea.right, 0)
-        : _pagePadding.add(_safeArea),
+        ? EdgeInsets.fromLTRB(_pagePadding.left + _pageSafeArea.left, 0, _pagePadding.right + _pageSafeArea.right, 0)
+        : _pagePadding.add(_pageSafeArea),
       isRoll: isRollPageTurning,
     );
 
@@ -484,7 +486,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
           currentChapter: pages[1],
           nextChapter: pages[2],
           background: _preferences.realBackground,
-          padding: EdgeInsets.fromLTRB(0, _pagePadding.top + _safeArea.top, 0, _pagePadding.bottom + _safeArea.bottom),
+          padding: EdgeInsets.fromLTRB(0, _pagePadding.top + _pageSafeArea.top, 0, _pagePadding.bottom + _pageSafeArea.bottom),
           onPageChange: (int page) {
             Future.delayed(Duration.zero).then((_) => setState(() => _currentPage = page));
           },
@@ -855,9 +857,9 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
 
   Widget _topWidget() {
     return Positioned(
-      top: _safeArea.top + 8,
-      left: _safeArea.left + 15,
-      right: _safeArea.right + 15,
+      top: _pageSafeArea.top + 8,
+      left: _pageSafeArea.left + 15,
+      right: _pageSafeArea.right + 15,
       child: Text(
         _chapterList[_currentChapter].title,
         style: TextStyle(
@@ -877,9 +879,9 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     int tpage = _getTotalPage(_currentChapter);
 
     return Positioned(
-      bottom: _safeArea.bottom + 5,
-      left: _safeArea.left + 15,
-      right: _safeArea.right + 15,
+      bottom: _pageSafeArea.bottom + 5,
+      left: _pageSafeArea.left + 15,
+      right: _pageSafeArea.right + 15,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
@@ -1133,7 +1135,10 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
 
   TickerFuture _showLayer(Duration duration, _layerBuilder builder) {
     if (_ticker.isActive) _onTick(Duration(milliseconds: -1));
-    if (_preferences.fullScreen) _setFullScreen(false);
+    if (_preferences.fullScreen) {
+      __pageSafeArea ??= _safeArea;
+      _setFullScreen(false);
+    }
     _animDistance = 0;
 
     _layer = [
@@ -1545,6 +1550,16 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     if (safeArea != _safeArea) {
       _safeArea = safeArea;
       needReCalcPages = true;
+
+      if (__pageSafeArea != null && __pageSafeArea.copyWith(top: _safeArea.top) == _safeArea) {
+        needReCalcPages = false;
+        if (_layer.isEmpty) {
+          if (__pageSafeArea != _safeArea) needReCalcPages = true;
+          __pageSafeArea = null;
+        }
+      } else {
+        __pageSafeArea = null;
+      }
     }
 
     if (size != Size.zero && size != _size) {

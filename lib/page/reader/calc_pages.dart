@@ -8,10 +8,15 @@ List calcPages({
   @required FontWeight fontWeight,
   @required Color color,
   @required double height,
+  @required double paragraphHeight,
   @required Size size,
   @required EdgeInsets padding,
   @required bool isRoll,
 }) {
+  if (paragraphHeight != null) {
+    content = content.replaceAll("\n", "\n" * paragraphHeight.round());
+  }
+
   TextStyle textStyle = TextStyle(
     fontSize: fontSize,
     fontFamily: fontFamily,

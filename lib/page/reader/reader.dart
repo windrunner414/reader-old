@@ -34,36 +34,39 @@ enum _PageTurningType {
 }
 
 class ReaderPreferences {
-  _PageTurningType pageTurning;
-  Color background;
-  Color fontColor;
-  double fontSize;
-  FontWeight fontWeight;
-  double height;
-  bool fullScreen;
-  bool nightMode;
+  final _PageTurningType pageTurning;
+  final Color background;
+  final Color fontColor;
+  final double fontSize;
+  final FontWeight fontWeight;
+  final double height;
+  final double paragraphHeight;
+  final bool fullScreen;
+  final bool nightMode;
 
   Color get realBackground => nightMode ? Colors.black : background;
   Color get realFontColor => nightMode ? Colors.white70 : fontColor;
 
-  static final ReaderPreferences defaultPref = ReaderPreferences(
+  static const ReaderPreferences defaultPref = ReaderPreferences(
     pageTurning: _PageTurningType.COVERAGE,
     background: Color.fromRGBO(213, 239, 210, 1),
     fontColor: Colors.black87,
     fontSize: 18,
     fontWeight: FontWeight.normal,
     height: 1.3,
+    paragraphHeight: 2,
     fullScreen: true,
     nightMode: false,
   );
 
-  ReaderPreferences({
+  const ReaderPreferences({
     this.pageTurning,
     this.background,
     this.fontColor,
     this.fontSize,
     this.fontWeight,
     this.height,
+    this.paragraphHeight,
     this.fullScreen,
     this.nightMode,
   });
@@ -75,6 +78,7 @@ class ReaderPreferences {
     'fontSize': fontSize,
     'fontWeight': fontWeight?.index,
     'height': height,
+    'paragraphHeight': paragraphHeight,
     'fullScreen': fullScreen,
     'nightMode': nightMode,
   };
@@ -86,6 +90,7 @@ class ReaderPreferences {
     fontSize = json['fontSize'],
     fontWeight = json['fontWeight'] != null ? FontWeight.values[json['fontWeight']] : null,
     height = json['height'],
+    paragraphHeight = json['paragraphHeight'],
     fullScreen = json['fullScreen'],
     nightMode = json['nightMode'];
 }
@@ -188,6 +193,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   EdgeInsets _pagePadding = const EdgeInsets.fromLTRB(15, 30, 15, 30);
 
   PageTurningPainter _painter;
+  bool get isRollPageTurning => _preferences.pageTurning == _PageTurningType.ROLL;
 
   void _showLoading() {
     setState(() {
@@ -279,21 +285,20 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     });
   }
 
-  List _calcPages(String content) {
-    bool isRoll = _preferences.pageTurning == _PageTurningType.ROLL;
-    return calcPages(
+  List _calcPages(String content) =>
+    calcPages(
       content: content,
       fontSize: _preferences.fontSize,
       fontWeight: _preferences.fontWeight,
       color: _preferences.realFontColor,
       height: _preferences.height,
-      size: isRoll ? Size(_size.width, _rollPageTurningScrollHeight) : _size,
-      padding: isRoll
+      paragraphHeight: _preferences.paragraphHeight,
+      size: isRollPageTurning ? Size(_size.width, _rollPageTurningScrollHeight) : _size,
+      padding: isRollPageTurning
         ? EdgeInsets.fromLTRB(_pagePadding.left + _safeArea.left, 0, _pagePadding.right + _safeArea.right, 0)
         : _pagePadding.add(_safeArea),
-      isRoll: isRoll,
+      isRoll: isRollPageTurning,
     );
-  }
 
   Future<void> _getChapterList([bool showLoading = false]) async {
     if (_inLoading && _chapterList.isNotEmpty) return;
@@ -387,13 +392,13 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     if (!_loadError) {
       if (_chapterPages[_currentChapter] == null) {
         _getChapterPages();
-        if (_preferences.pageTurning != _PageTurningType.ROLL) return null;
+        if (!isRollPageTurning) return null;
       } else {
         _cacheChapters();
       }
     }
 
-    if (_preferences.pageTurning == _PageTurningType.ROLL) {
+    if (isRollPageTurning) {
       List emptyPage = [null, _rollPageTurningScrollHeight];
       return _chapterList.isEmpty ? [[null, 0.0], emptyPage, [null, 0.0]] : [
         _chapterPages[_currentChapter - 1] ?? (_currentChapter > 0 ? emptyPage : [null, 0.0]),
@@ -674,7 +679,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
           _toPrev = true;
         }
 
-        if (_preferences.pageTurning != _PageTurningType.ROLL && !_canTurningPage()) {
+        if (!isRollPageTurning && !_canTurningPage()) {
           _touchStartPoint = null;
           return;
         }
@@ -705,7 +710,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
         return;
       }
 
-      if (_preferences.pageTurning == _PageTurningType.ROLL) {
+      if (isRollPageTurning) {
         _showLayer(Duration(milliseconds: 100), _toolBarWidget);
         _resetTouch();
         return;
@@ -740,7 +745,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
       return;
     }
 
-    if (_preferences.pageTurning == _PageTurningType.ROLL) {
+    if (isRollPageTurning) {
       setState(() => _resetTouch());
       return;
     }

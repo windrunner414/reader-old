@@ -114,7 +114,6 @@ class RollPageTurningPainter extends PageTurningPainter {
 
     if (currentChapter[0] != null && controller.initialPage != null) {
       controller.scrollOffset = (controller.initialPage * scrollHeight).clamp(0.0, currentChapter[1] - scrollHeight);
-      controller.initialPage = null;
     }
 
     if (controller.jumpToEnd >= 0) {
@@ -125,8 +124,7 @@ class RollPageTurningPainter extends PageTurningPainter {
     }
 
     if (!inLoading && currentChapter[0] == null) {
-      controller.scrollOffset = 0;
-      controller.initialPage = null;
+      controller.scrollTo(0);
     }
 
     int milliseconds = DateTime.now().millisecondsSinceEpoch;

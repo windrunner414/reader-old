@@ -118,7 +118,7 @@ class RollPageTurningPainter extends PageTurningPainter {
     if (nextChapter[1] != 0 && nextChapter[1] < scrollHeight) nextChapter[1] = scrollHeight;
 
     if (currentChapter[0] != null && controller.initialPage != null) {
-      controller.scrollOffset = (controller.initialPage * scrollHeight).clamp(0.0, currentChapter[1] - scrollHeight);
+      controller.scrollTo((controller.initialPage * scrollHeight).clamp(0.0, currentChapter[1] - scrollHeight));
     }
 
     if (controller.jumpToEnd >= 0) {

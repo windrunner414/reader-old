@@ -52,7 +52,7 @@ class _MyHomePageState extends State<MyHomePage> {
       onDownload: (List<Chapter> c){},
       getChapterContent: (String id) async {
         if (id == '1') {
-          //await Future.delayed(Duration(seconds: 3));
+          await Future.delayed(Duration(seconds: 3));
           //return '';
           //return null;
           //if (Random(DateTime.now().millisecondsSinceEpoch).nextInt(5) >= 3) return null;
@@ -111,7 +111,7 @@ class _MyHomePageState extends State<MyHomePage> {
     “呵呵…”面对着少女毫不掩饰的坦率话语，少年尴尬的笑了一声，可却未再说什么，人不风流枉少年，可现在的他，实在没这资格与心情，落寞的回转过身，对着广场之外缓缓行去…
     站在原地望着少年那恍如与世隔绝的孤独背影，萧薰儿踌躇了一会，然后在身后一干嫉妒的狼嚎声，快步追了上去，与少年并肩而行… ''';
         } else if (id == '2') {
-          //await Future.delayed(Duration(seconds: 3));
+          await Future.delayed(Duration(seconds: 3));
           //return null;
           return '''月如银盘，漫天繁星。
     山崖之颠，萧炎斜躺在草地之上，嘴叼一根青草，微微嚼动，任由那淡淡的苦涩在嘴弥漫开来…

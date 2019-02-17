@@ -12,6 +12,7 @@ class RollPageTurningController {
   int initialPage;
   AnimationController _animationController;
   double velocity;
+  double _lastMotionValue;
 
   bool get isAnimEnd => _animationController == null;
 
@@ -26,13 +27,14 @@ class RollPageTurningController {
   }
 
   void startMotion({
-    double lowerBound = 0.0,
+    double lowerBound = double.negativeInfinity,
     double upperBound = double.infinity,
   }) {
     if (_animationController != null) stopMotion();
     if (velocity == null || velocity.abs() < 150) return;
 
-    Simulation simulation = ClampingScrollSimulation(position: scrollOffset, velocity: velocity);
+    _lastMotionValue = 0;
+    Simulation simulation = ClampingScrollSimulation(position: 0, velocity: velocity);
     _animationController = AnimationController(
       vsync: vsync,
       lowerBound: lowerBound,
@@ -45,6 +47,7 @@ class RollPageTurningController {
   void stopMotion() {
     _animationController?.stop();
     _animationController = null;
+    _lastMotionValue = null;
   }
 
   void _animStatusListener(AnimationStatus status) {
@@ -55,7 +58,8 @@ class RollPageTurningController {
   }
   
   void _animListener() {
-    scrollTo(_animationController.value);
+    scroll(_animationController.value - _lastMotionValue);
+    _lastMotionValue = _animationController.value;
     if (_animationController.value == _animationController.upperBound
         || _animationController.value == _animationController.lowerBound) {
       stopMotion();
@@ -117,7 +121,7 @@ class RollPageTurningPainter extends PageTurningPainter {
     }
 
     if (controller.jumpToEnd >= 0) {
-      controller.scrollOffset = currentChapter[1] - controller.jumpToEnd;
+      controller.scrollTo(currentChapter[1] - (controller.jumpToEnd == 0 ? -controller.scrollOffset : controller.jumpToEnd));
       if (!inLoading) {
         controller.jumpToEnd = -1;
       }
@@ -139,7 +143,7 @@ class RollPageTurningPainter extends PageTurningPainter {
     } else {
       if (beginTouchPoint == null && touchPoint == null
           && controller.velocity != null && !inLoading) {
-        controller.startMotion(lowerBound: -0.01, upperBound: currentChapter[1]);
+        controller.startMotion();
       }
       if (inLoading) {
         controller.stopMotion();
@@ -158,40 +162,43 @@ class RollPageTurningPainter extends PageTurningPainter {
 
     if (!inLoading) {
       if (controller.scrollOffset < 0) {
-        controller.stopMotion();
-        controller.scrollOffset = 0;
         if (prevChapter[1] != 0) {
           if (currentChapter[0] == null) {
+            controller.stopMotion();
+            controller.scrollTo(0);
             controller.jumpToEnd = scrollHeight;
             toPrevChapter();
           } else {
             if (prevChapter[0] == null) {
+              controller.stopMotion();
+              controller.scrollTo(0);
               loadPrevChapter();
             } else {
-              controller.jumpToEnd = 0.01;
+              controller.jumpToEnd = 0;
               toPrevChapter();
             }
           }
+        } else {
+          controller.stopMotion();
+          controller.scrollTo(0);
         }
       } else if (controller.scrollOffset >= currentChapter[1]) {
-        controller.scrollOffset = currentChapter[1];
-        scrollOffsetAfterPaint = 0;
-        controller.stopMotion();
+        scrollOffsetAfterPaint = controller.scrollOffset - currentChapter[1];
         toNextChapter();
       } else if (controller.scrollOffset > currentChapter[1] - scrollHeight) {
         if (nextChapter[1] == 0) {
           controller.stopMotion();
-          controller.scrollOffset = currentChapter[1] - scrollHeight;
+          controller.scrollTo(currentChapter[1] - scrollHeight);
         } else {
           if (currentChapter[0] == null) {
             controller.stopMotion();
-            controller.scrollOffset = currentChapter[1] - scrollHeight;
+            controller.scrollTo(currentChapter[1] - scrollHeight);
             scrollOffsetAfterPaint = 0;
             toNextChapter();
           } else {
             if (nextChapter[0] == null) {
               controller.stopMotion();
-              controller.scrollOffset = currentChapter[1] - scrollHeight;
+              controller.scrollTo(currentChapter[1] - scrollHeight);
               loadNextChapter();
             }
           }
@@ -228,7 +235,7 @@ class RollPageTurningPainter extends PageTurningPainter {
     if (nextChapter[0] != null) canvas.drawPicture(nextChapter[0]);
     canvas.restore();
 
-    if (scrollOffsetAfterPaint != null) controller.scrollOffset = scrollOffsetAfterPaint;
+    if (scrollOffsetAfterPaint != null) controller.scrollTo(scrollOffsetAfterPaint);
   }
 
   @override

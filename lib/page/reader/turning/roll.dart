@@ -32,7 +32,7 @@ class RollPageTurningController {
   }) {
     if (_animationController != null) stopMotion();
     if (velocity == null || velocity.abs() < 150) return;
-    velocity = velocity.clamp(-10000, 10000);
+    velocity = velocity.clamp(-10000.0, 10000.0);
 
     _lastMotionValue = 0;
     Simulation simulation = ClampingScrollSimulation(position: 0, velocity: velocity);

@@ -177,8 +177,9 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   Map<int, int> _cachingChapters = {};
 
   EdgeInsets _safeArea = EdgeInsets.zero;
-  EdgeInsets __pageSafeArea;
-  EdgeInsets get _pageSafeArea => __pageSafeArea ?? _safeArea;
+  EdgeInsets get _pageSafeArea => _safeArea.copyWith(
+    top: _safeArea.top > 8 ? _safeArea.top - 8 : 0,
+  );
   int _batteryLevel = 100;
 
   List<_layerBuilder> _layer = [];
@@ -192,7 +193,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   RollPageTurningController _rollPageTurningController;
   double get _rollPageTurningScrollHeight =>
     _size.height - _pageSafeArea.top - _pageSafeArea.bottom - _pagePadding.top - _pagePadding.bottom;
-  EdgeInsets _pagePadding = const EdgeInsets.fromLTRB(15, 30, 15, 30);
+  EdgeInsets _pagePadding = const EdgeInsets.fromLTRB(20, 30, 20, 30);
 
   PageTurningPainter _painter;
   bool get isRollPageTurning => _preferences.pageTurning == _PageTurningType.ROLL;
@@ -863,8 +864,8 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   Widget _topWidget() {
     return Positioned(
       top: _pageSafeArea.top + 8,
-      left: _pageSafeArea.left + 15,
-      right: _pageSafeArea.right + 15,
+      left: _pageSafeArea.left + _pagePadding.left,
+      right: _pageSafeArea.right + _pagePadding.right,
       child: Text(
         _chapterList[_currentChapter].title,
         style: TextStyle(
@@ -884,9 +885,9 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     int tpage = _getTotalPage(_currentChapter);
 
     return Positioned(
-      bottom: _pageSafeArea.bottom + 5,
-      left: _pageSafeArea.left + 15,
-      right: _pageSafeArea.right + 15,
+      bottom: _pageSafeArea.bottom + 8,
+      left: _pageSafeArea.left + _pagePadding.left,
+      right: _pageSafeArea.right + _pagePadding.right,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
@@ -1141,7 +1142,6 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   TickerFuture _showLayer(Duration duration, _layerBuilder builder) {
     if (_ticker.isActive) _onTick(Duration(milliseconds: -1));
     if (_preferences.fullScreen) {
-      __pageSafeArea ??= _safeArea;
       _setFullScreen(false);
     }
     _animDistance = 0;
@@ -1542,7 +1542,10 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   Widget build(BuildContext context) {
     List<Widget> children = [];
     Size size = MediaQuery.of(context).size;
-    EdgeInsets safeArea = MediaQuery.of(context).padding;
+    EdgeInsets safeArea = EdgeInsets.zero.copyWith(
+      top: MediaQuery.of(context).padding.top,
+      bottom: window.padding.bottom > 0 ? 8 : 0,
+    );
     bool needReCalcPages = false;
 
     if (_painter != null) {
@@ -1552,20 +1555,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
       _painter = null;
     }
 
-    if (safeArea != _safeArea) {
-      _safeArea = safeArea;
-      needReCalcPages = true;
-
-      if (__pageSafeArea != null && __pageSafeArea.copyWith(top: _safeArea.top) == _safeArea) {
-        needReCalcPages = false;
-        if (_layer.isEmpty) {
-          if (__pageSafeArea != _safeArea) needReCalcPages = true;
-          __pageSafeArea = null;
-        }
-      } else {
-        __pageSafeArea = null;
-      }
-    }
+    _safeArea = safeArea;
 
     if (size != Size.zero && size != _size) {
       needReCalcPages = true;

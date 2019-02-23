@@ -39,6 +39,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(title: Text('reader')),
       body: FlatButton(onPressed: () {
         Navigator.push(context, PageRouteBuilder(pageBuilder: _buildReaderPage));
       }, child: Text('打开阅读器')),

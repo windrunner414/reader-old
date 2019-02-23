@@ -778,7 +778,11 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   }
 
   void _updateSystemStatus(Timer timer) async {
-    _batteryLevel = await Battery().batteryLevel;
+    try {
+      _batteryLevel = await Battery().batteryLevel;
+    } catch (_) {
+      _batteryLevel = -1;
+    }
     setState(() {});
   }
 
@@ -791,6 +795,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   void initState() {
     _ticker = createTicker(_onTick);
     _restoreState();
+    _updateSystemStatus(null);
     _updateSystemStatusTimer = Timer.periodic(Duration(seconds: 5), _updateSystemStatus);
     super.initState();
   }
@@ -887,7 +892,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
         children: <Widget>[
           Row(
             children: <Widget>[
-              RotatedBox(
+              _batteryLevel >= 0 ? RotatedBox(
                 quarterTurns: 1,
                 child: Stack(
                   children: <Widget>[
@@ -907,7 +912,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
                     ),
                   ],
                 ),
-              ),
+              ) : Container(),
               SizedBox(width: 5),
               Text(
                 Time.hourMinute,

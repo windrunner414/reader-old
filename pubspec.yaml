@@ -20,7 +20,7 @@ dependencies:
   flutter_spinkit: ^3.1.0
   battery: ^0.3.0
   flutter_seekbar:
-    git: https://github.com/windrunner414/flutter_seekbar.git
+    git: https://github.com/windrunner414/flutter_seekbar
 
 dev_dependencies:
   flutter_test:

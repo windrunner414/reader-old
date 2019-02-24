@@ -16,6 +16,10 @@
         android:name="io.flutter.app.FlutterApplication"
         android:label="reader"
         android:icon="@mipmap/ic_launcher">
+        <!-- for Huawei -->
+        <meta-data android:name="android.notch_support" android:value="true" />
+        <!-- for Xiaomi -->
+        <meta-data android:name="notch.config" android:value="portrait|landscape" />
         <activity
             android:name=".MainActivity"
             android:launchMode="singleTop"

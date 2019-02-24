@@ -181,6 +181,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   int _batteryLevel = 100;
 
   List<_layerBuilder> _layer = [];
+  bool _preventPageSafeAreaChange = false;
 
   ScrollController _chapterListScrollController = ScrollController();
   Timer _progressTimer;
@@ -712,7 +713,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
       }
 
       if (isRollPageTurning) {
-        _showLayer(Duration(milliseconds: 100), _toolBarWidget);
+        _showLayer(Duration(milliseconds: 100), _toolBarWidget, true);
         _resetTouch();
         return;
       }
@@ -729,7 +730,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
         _inDrag = true;
         _toPrevPage();
       } else if (dx >= _size.width / 3 && dx < _size.width * 2 / 3) {
-        _showLayer(Duration(milliseconds: 100), _toolBarWidget);
+        _showLayer(Duration(milliseconds: 100), _toolBarWidget, true);
         _resetTouch();
       } else {
         _toPrev = false;
@@ -788,6 +789,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   @override
   void setState(VoidCallback fn) {
     if (mounted) super.setState(fn);
+    else fn();
   }
 
   @override
@@ -1137,10 +1139,14 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     );
   }
 
-  TickerFuture _showLayer(Duration duration, _layerBuilder builder) {
+  TickerFuture _showLayer(Duration duration, _layerBuilder builder, [bool exitFullScreen = false]) {
     if (_ticker.isActive) _onTick(Duration(milliseconds: -1));
-    if (_preferences.fullScreen) {
+    if (_preferences.fullScreen && exitFullScreen) {
+      _preventPageSafeAreaChange = true;
       _setFullScreen(false);
+    } else if (_preventPageSafeAreaChange) {
+      if (_preferences.fullScreen) _setFullScreen(true);
+      Timer(Duration(milliseconds: 100), () => setState(() => _preventPageSafeAreaChange = false));
     }
     _animDistance = 0;
 
@@ -1171,6 +1177,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   }
 
   TickerFuture _closeLayer(Duration duration) {
+    if (_preferences.fullScreen) _setFullScreen(true);
     setState(() {
       _layer.add(() => Container(
         width: _size.width,
@@ -1184,7 +1191,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
         if (d.inMilliseconds >= duration.inMilliseconds) {
           _animDistance = 0;
           _layer.clear();
-          if (_preferences.fullScreen) _setFullScreen(true);
+          _preventPageSafeAreaChange = false;
           ticker.stop();
         } else {
           _animDistance = 1 - d.inMilliseconds / duration.inMilliseconds;
@@ -1554,7 +1561,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
       _painter = null;
     }
 
-    if (pageSafeArea != _pageSafeArea) {
+    if (!_preventPageSafeAreaChange && pageSafeArea != _pageSafeArea) {
       needReCalcPages = true;
       _pageSafeArea = pageSafeArea;
     }
@@ -1562,6 +1569,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
 
     if (size != Size.zero && size != _size) {
       needReCalcPages = true;
+      _pageSafeArea = pageSafeArea;
     }
     _size = size;
 

@@ -11,8 +11,10 @@ public class MainActivity extends FlutterActivity {
     super.onCreate(savedInstanceState);
     GeneratedPluginRegistrant.registerWith(this);
 
-    WindowManager.LayoutParams lp = getWindow().getAttributes();
-    lp.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
-    getWindow().setAttributes(lp);
+    if (android.os.Build.VERSION.SDK_INT >= 28) {
+      WindowManager.LayoutParams lp = getWindow().getAttributes();
+      lp.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+      getWindow().setAttributes(lp);
+    }
   }
 }

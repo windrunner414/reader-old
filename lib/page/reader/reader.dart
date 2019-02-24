@@ -177,9 +177,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   Map<int, int> _cachingChapters = {};
 
   EdgeInsets _safeArea = EdgeInsets.zero;
-  EdgeInsets get _pageSafeArea => _safeArea.copyWith(
-    top: _safeArea.top > 8 ? _safeArea.top - 8 : 0,
-  );
+  EdgeInsets _pageSafeArea = EdgeInsets.zero;
   int _batteryLevel = 100;
 
   List<_layerBuilder> _layer = [];
@@ -1542,10 +1540,11 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   Widget build(BuildContext context) {
     List<Widget> children = [];
     Size size = MediaQuery.of(context).size;
-    EdgeInsets safeArea = EdgeInsets.zero.copyWith(
-      top: MediaQuery.of(context).padding.top,
-      bottom: window.padding.bottom > 0 ? 8 : 0,
+    EdgeInsets safeArea = EdgeInsets.fromLTRB(
+      0, MediaQuery.of(context).padding.top,
+      0, window.padding.bottom > 0 ? 8 : 0,
     );
+    EdgeInsets pageSafeArea = safeArea;
     bool needReCalcPages = false;
 
     if (_painter != null) {
@@ -1555,6 +1554,10 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
       _painter = null;
     }
 
+    if (pageSafeArea != _pageSafeArea) {
+      needReCalcPages = true;
+      _pageSafeArea = pageSafeArea;
+    }
     _safeArea = safeArea;
 
     if (size != Size.zero && size != _size) {

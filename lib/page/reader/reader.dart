@@ -149,6 +149,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   double _animDistance2;
 
   Size _size;
+  Size _pageSize;
   bool _inLoading = false;
   bool _loadError = false;
 
@@ -191,7 +192,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
 
   RollPageTurningController _rollPageTurningController;
   double get _rollPageTurningScrollHeight =>
-    _size.height - _pageSafeArea.top - _pageSafeArea.bottom - _pagePadding.top - _pagePadding.bottom;
+    _pageSize.height - _pageSafeArea.top - _pageSafeArea.bottom - _pagePadding.top - _pagePadding.bottom;
   EdgeInsets _pagePadding = const EdgeInsets.fromLTRB(20, 30, 20, 30);
 
   PageTurningPainter _painter;
@@ -214,7 +215,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   }
 
   void _setFullScreen(bool fullScreen) {
-    SystemChrome.setEnabledSystemUIOverlays(fullScreen ? [SystemUiOverlay.bottom] : SystemUiOverlay.values);
+    SystemChrome.setEnabledSystemUIOverlays(fullScreen ? [] : SystemUiOverlay.values);
   }
 
   Future<bool> _saveReadProgress() async {
@@ -295,7 +296,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
       color: _preferences.realFontColor,
       height: _preferences.height,
       paragraphHeight: _preferences.paragraphHeight,
-      size: isRollPageTurning ? Size(_size.width, _rollPageTurningScrollHeight) : _size,
+      size: isRollPageTurning ? Size(_pageSize.width, _rollPageTurningScrollHeight) : _pageSize,
       padding: isRollPageTurning
         ? EdgeInsets.fromLTRB(_pagePadding.left + _pageSafeArea.left, 0, _pagePadding.right + _pageSafeArea.right, 0)
         : _pagePadding.add(_pageSafeArea),
@@ -1567,9 +1568,9 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     }
     _safeArea = safeArea;
 
-    if (size != Size.zero && size != _size) {
+    if (!_preventPageSafeAreaChange && size != Size.zero && size != _pageSize) {
       needReCalcPages = true;
-      _pageSafeArea = pageSafeArea;
+      _pageSize = size;
     }
     _size = size;
 

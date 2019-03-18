@@ -28,6 +28,7 @@ class Chapter {
 
 enum _PageTurningType {
   COVERAGE,
+  TRANSLATION,
   SIMULATION,
   ROLL,
   NONE,
@@ -453,6 +454,17 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
           toPrev: _toPrev,
         );
         break;
+      case _PageTurningType.TRANSLATION:
+        pageTurningPainter = TranslationPageTurningPainter(
+          beginTouchPoint: _beginPoint,
+          touchPoint: _currentPoint,
+          prevPage: pages[0],
+          currentPage: pages[1],
+          nextPage: pages[2],
+          background: _preferences.realBackground,
+          toPrev: _toPrev,
+        );
+        break;
       case _PageTurningType.SIMULATION:
         pageTurningPainter = SimulationPageTurningPainter(
           beginTouchPoint: _beginPoint,
@@ -619,6 +631,9 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
         animDurationMs = 1800;
         break;
       case _PageTurningType.COVERAGE:
+        animDurationMs = 2600;
+        break;
+      case _PageTurningType.TRANSLATION:
         animDurationMs = 2600;
         break;
       case _PageTurningType.NONE:
@@ -1362,6 +1377,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
             Row(
               children: <Widget>[
                 FlatButton(onPressed: () {setPreferences(ReaderPreferences(pageTurning: _PageTurningType.COVERAGE));}, child: Text('覆盖')),
+                FlatButton(onPressed: () {setPreferences(ReaderPreferences(pageTurning: _PageTurningType.TRANSLATION));}, child: Text('平移')),
                 FlatButton(onPressed: () {setPreferences(ReaderPreferences(pageTurning: _PageTurningType.SIMULATION));}, child: Text('仿真')),
                 FlatButton(onPressed: () {setPreferences(ReaderPreferences(pageTurning: _PageTurningType.ROLL));}, child: Text('上下')),
                 FlatButton(onPressed: () {setPreferences(ReaderPreferences(pageTurning: _PageTurningType.NONE));}, child: Text('无')),

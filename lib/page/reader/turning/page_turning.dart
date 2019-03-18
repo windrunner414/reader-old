@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 export 'coverage.dart';
+export 'translation.dart';
 export 'simulation.dart';
 export 'roll.dart';
 export 'none.dart';

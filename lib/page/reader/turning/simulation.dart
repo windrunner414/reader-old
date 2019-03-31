@@ -18,7 +18,7 @@ class SimulationPageTurningPainter extends PageTurningPainter {
   final bool toPrev;
 
   @override
-  bool get isAnimEnd => _pathA == null ? false : (
+  bool get isAnimEnd => (_pathA == null || _pathC == null) ? false : (
     (_pathA.contains(Offset(0, 0)) && _pathA.contains(Offset(size.width, 0))
       && _pathA.contains(Offset(0, size.height)) && _pathA.contains(Offset(size.width, size.height)))
     || (_pathC.contains(Offset(0, 0)) && _pathC.contains(Offset(size.width, 0))

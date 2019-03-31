@@ -16,7 +16,7 @@ dependencies:
   flutter:
     sdk: flutter
   shared_preferences: ^0.5.0
-  fluttertoast: ^2.2.11
+  fluttertoast: ^3.0.3
   flutter_spinkit: ^3.1.0
   battery: ^0.3.0
   flutter_seekbar:

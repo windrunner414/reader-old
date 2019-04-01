@@ -1059,7 +1059,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
               _iconButton(
                 icon: ReaderIcon.download,
                 onPressed: () {
-
+                  _showLayer(Duration(milliseconds: 100), _downloadWidget);
                 },
               ),
               SizedBox(width: 15),
@@ -1218,6 +1218,80 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     return ticker.start();
   }
 
+  Widget _downloadButton({String text, VoidCallback onPressed}) {
+    return FlatButton(
+      padding: EdgeInsets.zero,
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      child: SizedBox(
+        height: 40,
+        child: Center(
+          child: Text(
+            text,
+            style: TextStyle(
+              fontSize: 16,
+            ),
+          ),
+        ),
+      ),
+      onPressed: onPressed,
+    );
+  }
+
+  Widget _downloadWidget() {
+    List<Widget> children = [
+      SizedBox(
+        height: 50,
+        child: Center(
+          child: Text(
+            '请选择缓存范围',
+            style: TextStyle(
+              fontSize: 18,
+              decoration: TextDecoration.none,
+              fontWeight: FontWeight.normal,
+              color: Colors.black,
+            ),
+          ),
+        ),
+      ),
+      Container(height: 1, color: Color.fromRGBO(220, 220, 220, 1)),
+      _downloadButton(
+        text: '后面50章',
+        onPressed: () {},
+      ),
+      Container(height: 1, color: Color.fromRGBO(220, 220, 220, 1)),
+      _downloadButton(
+        text: '后面100章',
+        onPressed: () {},
+      ),
+      Container(height: 1, color: Color.fromRGBO(220, 220, 220, 1)),
+      _downloadButton(
+        text: '后面全部',
+        onPressed: () {},
+      ),
+      Container(height: 1, color: Color.fromRGBO(220, 220, 220, 1)),
+      _downloadButton(
+        text: '全部章节',
+        onPressed: () {},
+      ),
+    ];
+    return Center(
+      child: Opacity(
+        opacity: _animDistance,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.all(Radius.circular(5)),
+            color: Colors.white,
+          ),
+          width: 200,
+          height: 40.0 * 4 + 50.0 + 4,
+          child: Column(
+            children: children,
+          ),
+        ),
+      ),
+    );
+  }
+  
   Widget _catalogueWidget() {
     double width = _size.width * 0.9;
     double listViewHeight = (_size.height - _safeArea.top - _safeArea.bottom - 85.0);

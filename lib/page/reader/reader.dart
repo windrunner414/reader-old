@@ -45,8 +45,11 @@ class ReaderPreferences {
   final bool fullScreen;
   final bool nightMode;
 
-  Color get realBackground => nightMode ? Colors.black : background;
-  Color get realFontColor => nightMode ? Colors.white70 : fontColor;
+  Color get realBackground => nightMode ? Color.fromRGBO(34, 34, 34, 1) : background;
+  Color get realFontColor => nightMode ? Color.fromRGBO(124, 124, 124, 1) : fontColor;
+
+  Color get menuFontColor => Color.fromRGBO(51, 153, 255, 1);
+  Color get menuBackground => nightMode ? Color.fromRGBO(22, 22, 22, 1) : Colors.white;
 
   static const ReaderPreferences defaultPref = ReaderPreferences(
     pageTurning: _PageTurningType.COVERAGE,
@@ -959,11 +962,14 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   Widget _iconButton({
     @required IconData icon,
     double size = 24,
-    Color color = const Color.fromRGBO(51, 153, 255, 1),
+    Color color,
     String text,
     double fontSize = 12,
     @required VoidCallback onPressed,
   }) {
+    if (color == null) {
+      color = preferences.menuFontColor;
+    }
     return text == null ? GestureDetector(
       onTap: onPressed,
       child: DecoratedBox(
@@ -1018,7 +1024,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
 
   Widget _toolBarTopWidget() {
     return Container(
-      color: Colors.white,
+      color: preferences.menuBackground,
       padding: EdgeInsets.fromLTRB(
         8 + _safeArea.left, _safeArea.top,
         15 + _safeArea.right, 0,
@@ -1041,7 +1047,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
                   child: Text(
                     widget.bookName,
                     style: TextStyle(
-                      color: const Color.fromRGBO(51, 153, 255, 1),
+                      color: preferences.menuFontColor,
                       decoration: TextDecoration.none,
                       fontSize: 17,
                       fontWeight: FontWeight.normal,
@@ -1082,7 +1088,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
       left: 0,
       right: 0,
       child: Container(
-        color: Colors.white,
+        color: preferences.menuBackground,
         padding: EdgeInsets.fromLTRB(
           _safeArea.left,
           8,
@@ -1229,6 +1235,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
             text,
             style: TextStyle(
               fontSize: 16,
+              color: preferences.menuFontColor,
             ),
           ),
         ),
@@ -1248,31 +1255,28 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
               fontSize: 18,
               decoration: TextDecoration.none,
               fontWeight: FontWeight.normal,
-              color: Colors.black,
+              color: preferences.menuFontColor,
             ),
           ),
         ),
       ),
-      Container(height: 1, color: Color.fromRGBO(220, 220, 220, 1)),
       _downloadButton(
         text: '后面50章',
         onPressed: () {},
       ),
-      Container(height: 1, color: Color.fromRGBO(220, 220, 220, 1)),
       _downloadButton(
         text: '后面100章',
         onPressed: () {},
       ),
-      Container(height: 1, color: Color.fromRGBO(220, 220, 220, 1)),
       _downloadButton(
         text: '后面全部',
         onPressed: () {},
       ),
-      Container(height: 1, color: Color.fromRGBO(220, 220, 220, 1)),
       _downloadButton(
         text: '全部章节',
         onPressed: () {},
       ),
+      SizedBox(height: 8),
     ];
     return Center(
       child: Opacity(
@@ -1280,10 +1284,10 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.all(Radius.circular(5)),
-            color: Colors.white,
+            color: preferences.menuBackground,
           ),
           width: 200,
-          height: 40.0 * 4 + 50.0 + 4,
+          height: 40.0 * 4 + 50.0 + 8.0,
           child: Column(
             children: children,
           ),
@@ -1315,12 +1319,12 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
         width: width,
         height: _size.height,
         padding: EdgeInsets.only(right: -_safeArea.right).add(_safeArea),
-        color: Colors.white,
+        color: preferences.menuBackground,
         child: Column(
           children: <Widget>[
             Container(
               height: 85,
-              padding: const EdgeInsets.fromLTRB(15, 10, 15, 5),
+              padding: const EdgeInsets.fromLTRB(15, 20, 15, 5),
               decoration: BoxDecoration(
                 border: Border(bottom: BorderSide(color: Colors.black12, width: 1)),
               ),
@@ -1334,11 +1338,10 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
                       fontWeight: FontWeight.normal,
                       fontSize: 18,
                       decoration: TextDecoration.none,
-                      color: Colors.black87,
-                      height: 0.8,
+                      color: preferences.nightMode ? Colors.white70 : Colors.black87,
                     ),
                     softWrap: true,
-                    maxLines: 2,
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   Row(
@@ -1350,13 +1353,13 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
                           fontWeight: FontWeight.normal,
                           fontSize: 16,
                           decoration: TextDecoration.none,
-                          color: Colors.black87,
+                          color: preferences.nightMode ? Colors.white70 : Colors.black87,
                         ),
                       ),
                       _iconButton(
                         icon: Icons.refresh,
                         size: 23,
-                        color: Colors.black54,
+                        color: preferences.nightMode ? Colors.white54 : Colors.black54,
                         onPressed: () async {
                           await _getChapterList(true);
                         },
@@ -1377,6 +1380,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
                       itemExtent: 50,
                       itemCount: _chapterList.length,
                       itemBuilder: (BuildContext context, int index) {
+                        bool isCached = widget.isCached(_chapterList[index].id);
                         return FlatButton(
                           materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           highlightColor: const Color.fromRGBO(0, 0, 0, 0.1),
@@ -1388,8 +1392,8 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
                               _chapterList[index].title,
                               style: TextStyle(
                                 color: _currentChapter == index
-                                    ? const Color.fromRGBO(51, 153, 255, 1)
-                                    : (widget.isCached(_chapterList[index].id)
+                                    ? preferences.menuFontColor
+                                    : (((preferences.nightMode && !isCached) || (!preferences.nightMode && isCached))
                                       ? const Color.fromRGBO(98, 106, 115, 1)
                                       : const Color.fromRGBO(162, 171, 179, 1)),
                                 fontSize: 14,
@@ -1422,7 +1426,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(2),
                           boxShadow: [BoxShadow(color: Colors.black54, blurRadius: 1)],
-                          color: const Color.fromRGBO(245, 245, 245, 1),
+                          color: preferences.nightMode ? Color.fromRGBO(160, 160, 160, 1) : Color.fromRGBO(245, 245, 245, 1),
                         ),
                         child: Icon(Icons.menu, size: 15, color: Colors.black26),
                       ),
@@ -1445,7 +1449,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
       child: Container(
         padding: EdgeInsets.fromLTRB(_safeArea.left, 0, _safeArea.right, _safeArea.bottom),
         height: 150 + _safeArea.bottom,
-        color: Colors.white,
+        color: preferences.menuBackground,
         child: Column(
           children: <Widget>[
             Row(
@@ -1498,7 +1502,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
                   height: 65,
                   padding: EdgeInsets.fromLTRB(15 + _safeArea.left, 4, 15 + _safeArea.right, 4),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: preferences.menuBackground,
                     borderRadius: BorderRadius.circular(3),
                   ),
                   child: Column(
@@ -1510,7 +1514,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
                         ].title,
                         style: TextStyle(
                           fontSize: 16,
-                          color: const Color.fromRGBO(51, 153, 255, 1),
+                          color: preferences.menuFontColor,
                           fontWeight: FontWeight.normal,
                           decoration: TextDecoration.none,
                         ),
@@ -1523,7 +1527,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
                             .toStringAsFixed(2)}%',
                         style: TextStyle(
                           fontSize: 16,
-                          color: const Color.fromRGBO(51, 153, 255, 1),
+                          color: preferences.menuFontColor,
                           fontWeight: FontWeight.normal,
                           decoration: TextDecoration.none,
                         ),
@@ -1535,7 +1539,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
               Container(
                 height: 60 + _safeArea.bottom,
                 padding: EdgeInsets.fromLTRB(_safeArea.left + 15, 0, _safeArea.right + 15, _safeArea.bottom),
-                color: Colors.white,
+                color: preferences.menuBackground,
                 child: Row(
                   children: <Widget>[
                     GestureDetector(
@@ -1559,7 +1563,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
                         '上一章',
                         style: TextStyle(
                           fontSize: 14,
-                          color: const Color.fromRGBO(51, 153, 255, 1),
+                          color: preferences.menuFontColor,
                           fontWeight: FontWeight.normal,
                           decoration: TextDecoration.none,
                         ),
@@ -1606,7 +1610,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
                         '下一章',
                         style: TextStyle(
                           fontSize: 14,
-                          color: const Color.fromRGBO(51, 153, 255, 1),
+                          color: preferences.menuFontColor,
                           fontWeight: FontWeight.normal,
                           decoration: TextDecoration.none,
                         ),
@@ -1625,7 +1629,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
               child: Icon(
                 Icons.arrow_drop_down,
                 size: 46,
-                color: Colors.white,
+                color: preferences.menuBackground,
               ),
             ),
           ),

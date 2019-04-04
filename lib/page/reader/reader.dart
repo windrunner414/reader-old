@@ -1065,7 +1065,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
               _iconButton(
                 icon: ReaderIcon.download,
                 onPressed: () {
-                  _showLayer(Duration(milliseconds: 100), _downloadWidget);
+                  _showLayer(Duration(milliseconds: 150), _downloadWidget);
                 },
               ),
               SizedBox(width: 15),
@@ -1224,75 +1224,85 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     return ticker.start();
   }
 
-  Widget _downloadButton({String text, VoidCallback onPressed}) {
-    return FlatButton(
-      padding: EdgeInsets.zero,
+  Widget _bottomSheet({
+    @required List<String> buttonText,
+    int activeIndex,
+    @required void Function(int) onChecked,
+  }) {
+    int height = 45 * buttonText.length + 35;
+    List<Widget> buttons = [];
+    for (int index = 0; index < buttonText.length; ++index) {
+      buttons.add(SizedBox(
+        height: 45,
+        child: FlatButton(
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          shape: Border(bottom: BorderSide(width: 1, color: preferences.nightMode ? Color.fromRGBO(30, 30, 30, 1) : Color.fromRGBO(242, 242, 242, 1))),
+          highlightColor: Color.fromRGBO(0, 0, 0, 0.1),
+          splashColor: Color.fromRGBO(0, 0, 0, 0.03),
+          child: Center(
+            child: Text(
+              buttonText[index],
+              style: TextStyle(
+                color: preferences.menuFontColor,
+                fontSize: 17,
+              ),
+            ),
+          ),
+          onPressed: () {
+            _closeLayer(Duration(milliseconds: 150));
+            onChecked(index);
+          },
+        ),
+      ));
+    }
+    buttons.add(FlatButton(
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      highlightColor: Color.fromRGBO(0, 0, 0, 0.1),
+      splashColor: Color.fromRGBO(0, 0, 0, 0.03),
       child: SizedBox(
-        height: 40,
+        height: 35,
         child: Center(
           child: Text(
-            text,
+            '取消',
             style: TextStyle(
+              color: preferences.menuFontColor.withOpacity(0.9),
               fontSize: 16,
-              color: preferences.menuFontColor,
             ),
           ),
         ),
       ),
-      onPressed: onPressed,
+      onPressed: () {
+        _closeLayer(Duration(milliseconds: 150));
+      },
+    ));
+    return Positioned(
+      left: 15,
+      right: 15,
+      bottom: 10 - height * (1 - _animDistance),
+      child: Container(
+        decoration: BoxDecoration(
+          color: preferences.menuBackground,
+          borderRadius: BorderRadius.circular(5),
+        ),
+        child: Column(
+          children: buttons,
+        ),
+      ),
     );
   }
 
   Widget _downloadWidget() {
-    List<Widget> children = [
-      SizedBox(
-        height: 50,
-        child: Center(
-          child: Text(
-            '请选择缓存范围',
-            style: TextStyle(
-              fontSize: 18,
-              decoration: TextDecoration.none,
-              fontWeight: FontWeight.normal,
-              color: preferences.menuFontColor,
-            ),
-          ),
-        ),
-      ),
-      _downloadButton(
-        text: '后面50章',
-        onPressed: () {},
-      ),
-      _downloadButton(
-        text: '后面100章',
-        onPressed: () {},
-      ),
-      _downloadButton(
-        text: '后面全部',
-        onPressed: () {},
-      ),
-      _downloadButton(
-        text: '全部章节',
-        onPressed: () {},
-      ),
-      SizedBox(height: 8),
-    ];
-    return Center(
-      child: Opacity(
-        opacity: _animDistance,
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.all(Radius.circular(5)),
-            color: preferences.menuBackground,
-          ),
-          width: 200,
-          height: 40.0 * 4 + 50.0 + 8.0,
-          child: Column(
-            children: children,
-          ),
-        ),
-      ),
+    return _bottomSheet(
+      buttonText: <String>[
+        "后20章",
+        "后50章",
+        "后100章",
+        "后面全部",
+        "全部章节",
+      ],
+      onChecked: (int index) {
+
+      },
     );
   }
   

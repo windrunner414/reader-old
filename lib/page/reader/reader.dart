@@ -100,12 +100,12 @@ class ReaderPreferences {
 }
 
 typedef getChapterContentCallback = Future<String> Function(String chapterId);
-typedef getChapterListCallback = Future<List<Chapter>> Function();
+typedef getChapterListCallback = Future<List<Chapter>> Function(String bookId);
 typedef downloadCallback = Future<void> Function(List<Chapter> downloadChapterList);
 typedef isCachedCallback = bool Function(String chapterId);
 
 class Reader extends StatefulWidget {
-  final int bookId;
+  final String bookId;
   final String bookName;
   final getChapterContentCallback getChapterContent;
   final getChapterListCallback getChapterList;
@@ -310,7 +310,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   Future<void> _getChapterList([bool showLoading = false]) async {
     if (_inLoading && _chapterList.isNotEmpty) return;
     if (showLoading) _showLoading();
-    List<Chapter> chapterList = await widget.getChapterList();
+    List<Chapter> chapterList = await widget.getChapterList(widget.bookId);
     if (chapterList != null && chapterList.isNotEmpty) {
       if (_refreshChapterListTimer == null) {
         _refreshChapterListTimer = Timer.periodic(Duration(minutes: 5), (Timer timer) => _getChapterList());

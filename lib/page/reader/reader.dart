@@ -798,7 +798,6 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   @override
   void setState(VoidCallback fn) {
     if (mounted) super.setState(fn);
-    else fn();
   }
 
   @override

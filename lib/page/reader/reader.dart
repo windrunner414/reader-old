@@ -14,17 +14,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:battery/battery.dart';
 import 'package:flutter_seekbar/flutter_seekbar.dart';
-
-class Chapter {
-  String title;
-  String id;
-
-  Chapter({
-    @required this.title,
-    @required this.id,
-  }) : assert(title != null),
-       assert(id != null);
-}
+import 'package:reader/model/book_chapter_list.dart';
 
 enum _PageTurningType {
   COVERAGE,
@@ -58,7 +48,7 @@ class ReaderPreferences {
     fontSize: 18,
     fontWeight: FontWeight.normal,
     height: 1.3,
-    paragraphHeight: 2,
+    paragraphHeight: 1,
     fullScreen: true,
     nightMode: false,
   );
@@ -100,8 +90,8 @@ class ReaderPreferences {
 }
 
 typedef getChapterContentCallback = Future<String> Function(String chapterId);
-typedef getChapterListCallback = Future<List<Chapter>> Function(String bookId);
-typedef downloadCallback = Future<void> Function(List<Chapter> downloadChapterList);
+typedef getChapterListCallback = Future<List<BookChapterInfo>> Function(String bookId);
+typedef downloadCallback = void Function(String bookId, List<String> downloadChapterIDList);
 typedef isCachedCallback = bool Function(String chapterId);
 
 class Reader extends StatefulWidget {
@@ -109,7 +99,7 @@ class Reader extends StatefulWidget {
   final String bookName;
   final getChapterContentCallback getChapterContent;
   final getChapterListCallback getChapterList;
-  final downloadCallback onDownload;
+  final downloadCallback download;
   final isCachedCallback isCached;
   final WillPopCallback onWillPop;
   final int preloadNum;
@@ -120,7 +110,7 @@ class Reader extends StatefulWidget {
     @required this.bookName,
     @required this.getChapterContent,
     @required this.getChapterList,
-    @required this.onDownload,
+    @required this.download,
     @required this.isCached,
     @required this.onWillPop,
     this.preloadNum = 1,
@@ -128,7 +118,7 @@ class Reader extends StatefulWidget {
        assert(bookName != null),
        assert(getChapterContent != null),
        assert(getChapterList != null),
-       assert(onDownload != null),
+       assert(download != null),
        assert(isCached != null),
        assert(preloadNum != null && preloadNum >= 1),
        assert(onWillPop != null),
@@ -157,7 +147,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   bool _inLoading = false;
   bool _loadError = false;
 
-  List<Chapter> _chapterList = [];
+  List<BookChapterInfo> _chapterList = [];
   int __currentChapter;
   int __currentPage;
 
@@ -310,7 +300,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   Future<void> _getChapterList([bool showLoading = false]) async {
     if (_inLoading && _chapterList.isNotEmpty) return;
     if (showLoading) _showLoading();
-    List<Chapter> chapterList = await widget.getChapterList(widget.bookId);
+    List<BookChapterInfo> chapterList = await widget.getChapterList(widget.bookId);
     if (chapterList != null && chapterList.isNotEmpty) {
       if (_refreshChapterListTimer == null) {
         _refreshChapterListTimer = Timer.periodic(Duration(minutes: 5), (Timer timer) => _getChapterList());

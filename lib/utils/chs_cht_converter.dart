@@ -1210,7 +1210,8 @@ class CHSCHTConverter {
     '终': '終',
     '种': '種',
     '肿': '腫',
-    '众': '衆',
+    '众': '眾',
+    '吓': '嚇',
     '诌': '謅',
     '轴': '軸',
     '皱': '皺',
@@ -2543,12 +2544,14 @@ class CHSCHTConverter {
     '餘': '余',
     '鍊': '链',
     '洩': '泄',
+    '眾': '众',
+    '嚇': '吓',
   };
 
   static String s2t(String str) {
     String result = '';
     for (int i = 0; i < str.length; ++i) {
-       result += _s2tMap[str[i]] ?? str[i];
+      result += _s2tMap[str[i]] ?? str[i];
     }
     return result;
   }

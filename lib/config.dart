@@ -2,6 +2,9 @@ import 'package:dio/dio.dart';
 import 'package:reader/utils/chs_cht_converter.dart';
 
 class Config {
+  static int netIsolateNum = 6; // net thread num, max number of concurrent requests
+  static int downloadConcurrencyNum = 5; // should be less than netIsolateNum
+
   static BaseOptions netOptions = BaseOptions(
     connectTimeout: 5000,
     receiveTimeout: 8000,

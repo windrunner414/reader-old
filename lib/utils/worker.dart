@@ -1,4 +1,9 @@
 import 'package:worker2/worker2.dart';
+import 'package:reader/config.dart';
+
+export 'package:worker2/worker2.dart';
+
+Worker taskWorker = Worker(poolSize: Config.taskWorkerNum, spawnLazily: true);
 
 class AnonymousTask implements Task {
   Function call;

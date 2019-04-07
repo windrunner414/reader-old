@@ -4,7 +4,7 @@ part 'book_chapter_content.g.dart';
 
 @JsonSerializable()
 class BookChapterContent {
-  @JsonKey(name: 'content')
+  @JsonKey(required: true, disallowNullValue: true, name: 'content')
   String content;
 
   BookChapterContent({this.content});

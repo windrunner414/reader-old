@@ -3,7 +3,8 @@ import 'package:flutter/scheduler.dart';
 import 'package:reader/page/reader/turning/page_turning.dart';
 import 'package:reader/page/reader/calc_pages.dart';
 import 'package:reader/page/reader/reader_icon.dart';
-import 'package:reader/utils/local_storage.dart';
+import 'package:reader/model/reading_progress.dart';
+import 'package:reader/dao/reader_dao.dart';
 import 'package:reader/utils/time.dart';
 import 'dart:math';
 import 'dart:ui';
@@ -15,79 +16,9 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:battery/battery.dart';
 import 'package:flutter_seekbar/flutter_seekbar.dart';
 import 'package:reader/model/book_chapter_list.dart';
-
-enum _PageTurningType {
-  COVERAGE,
-  TRANSLATION,
-  SIMULATION,
-  ROLL,
-  NONE,
-}
-
-class ReaderPreferences {
-  final _PageTurningType pageTurning;
-  final Color background;
-  final Color fontColor;
-  final double fontSize;
-  final FontWeight fontWeight;
-  final double height;
-  final double paragraphHeight;
-  final bool fullScreen;
-  final bool nightMode;
-
-  Color get realBackground => nightMode ? Color.fromRGBO(34, 34, 34, 1) : background;
-  Color get realFontColor => nightMode ? Color.fromRGBO(124, 124, 124, 1) : fontColor;
-
-  Color get menuFontColor => Color.fromRGBO(51, 153, 255, 1);
-  Color get menuBackground => nightMode ? Color.fromRGBO(22, 22, 22, 1) : Colors.white;
-
-  static const ReaderPreferences defaultPref = ReaderPreferences(
-    pageTurning: _PageTurningType.COVERAGE,
-    background: Color.fromRGBO(213, 239, 210, 1),
-    fontColor: Colors.black87,
-    fontSize: 18,
-    fontWeight: FontWeight.normal,
-    height: 1.3,
-    paragraphHeight: 1,
-    fullScreen: true,
-    nightMode: false,
-  );
-
-  const ReaderPreferences({
-    this.pageTurning,
-    this.background,
-    this.fontColor,
-    this.fontSize,
-    this.fontWeight,
-    this.height,
-    this.paragraphHeight,
-    this.fullScreen,
-    this.nightMode,
-  });
-
-  Map<String, dynamic> toJson() => {
-    'pageTurning': pageTurning?.index,
-    'background': background?.value,
-    'fontColor': fontColor?.value,
-    'fontSize': fontSize,
-    'fontWeight': fontWeight?.index,
-    'height': height,
-    'paragraphHeight': paragraphHeight,
-    'fullScreen': fullScreen,
-    'nightMode': nightMode,
-  };
-
-  ReaderPreferences.fromJson(Map<String, dynamic> json) :
-    pageTurning = json['pageTurning'] != null ? _PageTurningType.values[json['pageTurning']] : null,
-    background = json['background'] != null ? Color(json['background']) : null,
-    fontColor = json['fontColor'] != null ? Color(json['fontColor']) : null,
-    fontSize = json['fontSize'],
-    fontWeight = json['fontWeight'] != null ? FontWeight.values[json['fontWeight']] : null,
-    height = json['height'],
-    paragraphHeight = json['paragraphHeight'],
-    fullScreen = json['fullScreen'],
-    nightMode = json['nightMode'];
-}
+import 'package:reader/page/state_with_net_manager.dart';
+import 'package:reader/dao/data_result.dart';
+import 'package:reader/model/reader_preferences.dart';
 
 typedef getChapterContentCallback = Future<String> Function(String chapterId);
 typedef getChapterListCallback = Future<List<BookChapterInfo>> Function(String bookId);
@@ -130,7 +61,7 @@ class Reader extends StatefulWidget {
 
 typedef _layerBuilder = Widget Function();
 
-class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
+class _ReaderState extends StateWithNetManager<Reader> with TickerProviderStateMixin<Reader> {
   ReaderPreferences _preferences;
   ReaderPreferences get preferences => _preferences;
 
@@ -142,28 +73,29 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   double _animDistance;
   double _animDistance2;
 
+  ReaderDao _readerDao;
+
   Size _size;
   Size _pageSize;
   bool _inLoading = false;
   bool _loadError = false;
 
   List<BookChapterInfo> _chapterList = [];
-  int __currentChapter;
-  int __currentPage;
+  ReadingProgress _readingProgress;
 
-  int get _currentPage => __currentPage;
+  int get _currentPage => _readingProgress?.pageIndex;
 
   @protected
   set _currentPage(int page) {
-    __currentPage = page;
+    _readingProgress.pageIndex = page;
     _saveReadProgress();
   }
 
-  int get _currentChapter => __currentChapter;
+  int get _currentChapter => _readingProgress?.chapterIndex;
 
   @protected
   set _currentChapter(int chapter) {
-    __currentChapter = chapter;
+    _readingProgress.chapterIndex = chapter;
     _saveReadProgress();
   }
 
@@ -190,7 +122,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   EdgeInsets _pagePadding = const EdgeInsets.fromLTRB(20, 30, 20, 30);
 
   PageTurningPainter _painter;
-  bool get isRollPageTurning => _preferences.pageTurning == _PageTurningType.ROLL;
+  bool get isRollPageTurning => _preferences.pageTurning == PageTurningType.ROLL;
 
   void _showLoading() {
     setState(() {
@@ -212,28 +144,26 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     SystemChrome.setEnabledSystemUIOverlays(fullScreen ? [] : SystemUiOverlay.values);
   }
 
-  Future<bool> _saveReadProgress() async {
-    return LocalStorage.setStringList('read_progress_${widget.bookId}', ['$_currentChapter', '$_currentPage']);
+  void _saveReadProgress() {
+    _readerDao.saveReadingProgress(_readingProgress);
   }
 
-  Future<void> setPreferences(ReaderPreferences pref) async {
-    if (_preferences == null) {
-      _preferences = ReaderPreferences.defaultPref;
-    }
+  void setPreferences(ReaderPreferences pref) {
+    assert(pref != null);
 
-    if (pref != null) {
-      var prefJson = pref.toJson();
-      var currPrefJson = _preferences.toJson();
-      prefJson.forEach((String k, v) {
-        if (v != null) currPrefJson[k] = v;
-      });
-      _preferences = ReaderPreferences.fromJson(currPrefJson);
-      await LocalStorage.setString('reader_preferences', json.encode(_preferences));
-    }
-
-    if (_layer.isEmpty) {
-      _setFullScreen(_preferences.fullScreen);
-    }
+    bool isInit = _preferences == null;
+    Map<String, dynamic> prefJson = pref.toJson();
+    Map<String, dynamic> currPrefJson = isInit ? {} : _preferences.toJson();
+    prefJson.forEach((String k, v) {
+      if (v != null) {
+        if (k == 'fullScreen' && v != currPrefJson[k]) {
+          _setFullScreen(v);
+        }
+        currPrefJson[k] = v;
+      }
+    });
+    _preferences = ReaderPreferences.fromJson(currPrefJson);
+    if (!isInit) _readerDao.savePreferences(_preferences);
 
     setState(() => _reCalcPages());
   }
@@ -241,21 +171,21 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   Future<void> _restoreState() async {
     _showLoading();
 
-    List<String> progress = await LocalStorage.getStringList('read_progress_${widget.bookId}');
-    if (progress?.length == 2) {
-      __currentChapter = int.tryParse(progress[0]) ?? 0;
-      __currentPage = int.tryParse(progress[1]) ?? 0;
+    var result = await _readerDao.getReadingProgress(widget.bookId);
+    if (result.status == DataResultStatus.SUCCESS) {
+      _readingProgress = result.data;
     } else {
-      __currentChapter = 0;
-      __currentPage = 0;
+      Fluttertoast.showToast(msg: '阅读记录获取失败');
+      _readingProgress = ReadingProgress.fromJson({'bookId': widget.bookId});
     }
 
-    // must set it at end, used to know whether restoreState is complete
-    try {
-      String readerPref = await LocalStorage.getString('reader_preferences');
-      setPreferences(ReaderPreferences.fromJson(json.decode(readerPref)));
-    } catch(_) {
-      setPreferences(null);
+    // must set preferences at end, used to know whether restoreState is complete
+    result = await _readerDao.getPreferences();
+    if (result.status == DataResultStatus.SUCCESS) {
+      setPreferences(result.data);
+    } else {
+      Fluttertoast.showToast(msg: '阅读器设置获取失败');
+      setPreferences(ReaderPreferences.fromJson({}));
     }
 
     _hideLoading();
@@ -436,7 +366,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
 
     PageTurningPainter pageTurningPainter;
     switch (_preferences.pageTurning) {
-      case _PageTurningType.COVERAGE:
+      case PageTurningType.COVERAGE:
         pageTurningPainter = CoveragePageTurningPainter(
           beginTouchPoint: _beginPoint,
           touchPoint: _currentPoint,
@@ -447,7 +377,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
           toPrev: _toPrev,
         );
         break;
-      case _PageTurningType.TRANSLATION:
+      case PageTurningType.TRANSLATION:
         pageTurningPainter = TranslationPageTurningPainter(
           beginTouchPoint: _beginPoint,
           touchPoint: _currentPoint,
@@ -458,7 +388,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
           toPrev: _toPrev,
         );
         break;
-      case _PageTurningType.SIMULATION:
+      case PageTurningType.SIMULATION:
         pageTurningPainter = SimulationPageTurningPainter(
           beginTouchPoint: _beginPoint,
           touchPoint: _currentPoint,
@@ -469,13 +399,13 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
           toPrev: _toPrev,
         );
         break;
-      case _PageTurningType.NONE:
+      case PageTurningType.NONE:
         pageTurningPainter = NonePageTurningPainter(
           background: _preferences.realBackground,
           currentPage: pages[1],
         );
         break;
-      case _PageTurningType.ROLL:
+      case PageTurningType.ROLL:
         if (_rollPageTurningController == null) {
           _rollPageTurningController = RollPageTurningController(
             vsync: this,
@@ -618,18 +548,18 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   void _onTick(Duration duration) {
     int animDurationMs;
     switch (_preferences.pageTurning) {
-      case _PageTurningType.ROLL:
+      case PageTurningType.ROLL:
         return;
-      case _PageTurningType.SIMULATION:
+      case PageTurningType.SIMULATION:
         animDurationMs = 1800;
         break;
-      case _PageTurningType.COVERAGE:
+      case PageTurningType.COVERAGE:
         animDurationMs = 2600;
         break;
-      case _PageTurningType.TRANSLATION:
+      case PageTurningType.TRANSLATION:
         animDurationMs = 2600;
         break;
-      case _PageTurningType.NONE:
+      case PageTurningType.NONE:
         animDurationMs = 0;
         break;
     }
@@ -802,15 +732,17 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
 
   @override
   void initState() {
+    super.initState();
+    _readerDao = ReaderDao(cancelToken: cancelToken);
     _ticker = createTicker(_onTick);
     _restoreState();
     _updateSystemStatus(null);
     _updateSystemStatusTimer = Timer.periodic(Duration(seconds: 5), _updateSystemStatus);
-    super.initState();
   }
 
   @override
   void dispose() {
+    super.dispose();
     if (_preferences.fullScreen) {
       _setFullScreen(false);
     }
@@ -818,7 +750,6 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
     _updateSystemStatusTimer?.cancel();
     _refreshChapterListTimer?.cancel();
     _rollPageTurningController?.stopMotion();
-    super.dispose();
   }
 
   Widget _reloadWidget() {
@@ -1453,11 +1384,11 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
           children: <Widget>[
             Row(
               children: <Widget>[
-                FlatButton(onPressed: () {setPreferences(ReaderPreferences(pageTurning: _PageTurningType.COVERAGE));}, child: Text('覆盖')),
-                FlatButton(onPressed: () {setPreferences(ReaderPreferences(pageTurning: _PageTurningType.TRANSLATION));}, child: Text('平移')),
-                FlatButton(onPressed: () {setPreferences(ReaderPreferences(pageTurning: _PageTurningType.SIMULATION));}, child: Text('仿真')),
-                FlatButton(onPressed: () {setPreferences(ReaderPreferences(pageTurning: _PageTurningType.ROLL));}, child: Text('上下')),
-                FlatButton(onPressed: () {setPreferences(ReaderPreferences(pageTurning: _PageTurningType.NONE));}, child: Text('无')),
+                FlatButton(onPressed: () {setPreferences(ReaderPreferences(pageTurning: PageTurningType.COVERAGE));}, child: Text('覆盖')),
+                FlatButton(onPressed: () {setPreferences(ReaderPreferences(pageTurning: PageTurningType.TRANSLATION));}, child: Text('平移')),
+                FlatButton(onPressed: () {setPreferences(ReaderPreferences(pageTurning: PageTurningType.SIMULATION));}, child: Text('仿真')),
+                FlatButton(onPressed: () {setPreferences(ReaderPreferences(pageTurning: PageTurningType.ROLL));}, child: Text('上下')),
+                FlatButton(onPressed: () {setPreferences(ReaderPreferences(pageTurning: PageTurningType.NONE));}, child: Text('无')),
               ],
             ),
           ],

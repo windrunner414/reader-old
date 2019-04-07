@@ -4,34 +4,35 @@ import 'package:reader/config.dart';
 import 'package:reader/dao/data_result.dart';
 import 'package:reader/model/book_chapter_list.dart';
 import 'package:reader/model/book_chapter_content.dart';
-import 'package:reader/utils/anonymous_task.dart';
 
 class BookDao extends BaseDao {
   BookDao({CancelToken cancelToken}) : super(cancelToken: cancelToken);
 
-  Future<DataResult> getBookInfo(String id) async {
+  Future<DataResult> getBookInfo(String id) {
     return null;
   }
 
-  static Future<DataResult> _getChapterList(String id) async {
-    String path = Config.rule.makeChapterListPath(id);
-    Response response = await net.get(path);
-    var result = Config.rule.parseChapterListResult(response.data);
-    return DataResult(data: BookChapterList.fromJson(result), success: true);
+  static BookChapterList _getChapterList(String data)
+    => BookChapterList.fromJson(Config.rule.parseChapterListResult(data));
+
+  Future<DataResult> getChapterList(String id) {
+    return requestAndParse(
+      request: () {
+        return net.get(Config.rule.makeChapterListPath(id), cancelToken: cancelToken);
+      },
+      parse: _getChapterList,
+    );
   }
 
-  Future<DataResult> getChapterList(String id) async {
-    return performNetTask(AnonymousTask(_getChapterList, positionalArguments: [id]));
-  }
+  static BookChapterContent _getChapterContent(String data)
+    => BookChapterContent.fromJson(Config.rule.parseChapterContentResult(data));
 
-  static Future<DataResult> _getChapterContent(String id) async {
-    String path = Config.rule.makeChapterContentPath(id);
-    Response response = await net.get(path);
-    var result = Config.rule.parseChapterContentResult(response.data);
-    return DataResult(data: BookChapterContent.fromJson(result), success: true);
-  }
-
-  Future<DataResult> getChapterContent(String id) async {
-    return performNetTask(AnonymousTask(_getChapterContent, positionalArguments: [id]));
+  Future<DataResult> getChapterContent(String id) {
+    return requestAndParse(
+      request: () {
+        return net.get(Config.rule.makeChapterContentPath(id), cancelToken: cancelToken);
+      },
+      parse: _getChapterContent,
+    );
   }
 }

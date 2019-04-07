@@ -2,18 +2,20 @@ import 'package:dio/dio.dart';
 import 'package:reader/utils/chs_cht_converter.dart';
 
 class Config {
-  static int netIsolateNum = 6; // net thread num, max number of concurrent requests
-  static int downloadConcurrencyNum = 5; // should be less than netIsolateNum
+  static int taskWorkerNum = 5; /// 工作isolate数，用于解析api返回内容等
+  static int downloadConcurrencyNum = 5; /// 缓存小说的并发请求数
 
   static BaseOptions netOptions = BaseOptions(
-    connectTimeout: 5000,
-    receiveTimeout: 8000,
-    baseUrl: 'https://m.cread.tw',
-    responseType: ResponseType.plain,
+    connectTimeout: 5000, /// 连接超时时间，单位毫秒
+    receiveTimeout: 8000, /// 接收数据超时时间，单位毫秒
+    baseUrl: 'https://m.cread.tw', /// api基础url，实际请求url为基础url + 路径
+    responseType: ResponseType.plain, /// api返回数据类型，设置为plain不要改动
   );
 
   static Rule rule = Rule(
+    /// 根据id构造章节列表页的路径
     makeChapterListPath: (String id) => '/book/$id/',
+    /// 解析章节列表页返回结果，转换为Map，符合model.fromJson的格式
     parseChapterListResult: (String body) {
       String regExp = '<a href="(.+?)" class="ui_catalog"><span class="title">(.+?)</span>';
       Iterable<Match> matches = RegExp(regExp).allMatches(body);
@@ -24,7 +26,9 @@ class Config {
       }
       return result;
     },
+    /// 根据id构造章节内容页路径
     makeChapterContentPath: (String id) => id,
+    /// 解析章节内容页返回结果
     parseChapterContentResult: (String body) {
       String regExp = '<div class="r-content" id="uiContent">([\\s\\S]+?)</div>';
       Match match = RegExp(regExp).firstMatch(body);

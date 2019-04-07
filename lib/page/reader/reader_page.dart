@@ -37,12 +37,12 @@ class _ReaderPageState extends StateWithNetManager<ReaderPage> {
       },
       getChapterContent: (String id) async {
         DataResult result = await _bookDao.getChapterContent(id);
-        if (!result.success) return null;
+        if (result.status != DataResultStatus.SUCCESS) return null;
         return result.data.content;
       },
       getChapterList: (String id) async {
         DataResult result = await _bookDao.getChapterList(id);
-        if (!result.success) return null;
+        if (result.status != DataResultStatus.SUCCESS) return null;
         return result.data.chapterList;
       },
       isCached: (String id) {

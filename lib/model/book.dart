@@ -9,28 +9,28 @@ enum BookStatus {
 
 @JsonSerializable()
 class Book {
-  @JsonKey(name: 'id')
+  @JsonKey(required: true, disallowNullValue: true, name: 'id')
   String id;
 
-  @JsonKey(name: 'name')
+  @JsonKey(required: true, disallowNullValue: true, name: 'name')
   String name;
 
-  @JsonKey(name: 'cover')
+  @JsonKey(required: true, disallowNullValue: true, name: 'cover')
   String cover;
 
-  @JsonKey(name: 'author')
+  @JsonKey(required: true, disallowNullValue: true, name: 'author')
   String author;
 
-  @JsonKey(name: 'status')
+  @JsonKey(required: true, disallowNullValue: true, name: 'status')
   BookStatus status;
 
-  @JsonKey(name: 'category')
+  @JsonKey(required: true, disallowNullValue: true, name: 'category')
   String category;
 
-  @JsonKey(name: 'introduction')
+  @JsonKey(required: true, disallowNullValue: true, name: 'introduction')
   String introduction;
 
-  @JsonKey(name: 'latestChapter')
+  @JsonKey(required: true, disallowNullValue: true, name: 'latestChapter')
   String latestChapter;
 
   Book({this.id, this.name, this.cover, this.author, this.status, this.category, this.introduction, this.latestChapter});

@@ -1,63 +1,72 @@
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sqflite/sqflite.dart';
 
-class LocalStorage {
-  static Future<bool> setInt(String key, int value) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.setInt(key, value);
+export 'package:sqflite/sqflite.dart';
+
+Map<String, Map<String, dynamic>> dbInfo = {
+  'reading_progress': {
+    'fileName': 'reading_progress.db',
+    'tableName': 'reading_progress',
+    'version': 1,
+    'initSQL': '''
+      CREATE TABLE reading_progress (
+        bookId TEXT PRIMARY KEY,
+        chapterIndex INTEGER,
+        pageIndex INTEGER
+      )
+    ''',
+  },
+  'preferences': {
+    'fileName': 'preferences.db',
+    'tableName': 'preferences',
+    'version': 1,
+    'initSQL': '''
+      CREATE TABLE preferences (
+        key TEXT PRIMARY KEY,
+        value TEXT
+      )
+    ''',
+  },
+};
+
+class DB {
+  final String fileName;
+  final String tableName;
+
+  Database _database;
+  Database get database => _database;
+  set database(Database db) {
+    if (_database == null) {
+      _database = db;
+    } else {
+      throw Exception("database has been initialized");
+    }
   }
 
-  static Future<bool> setBool(String key, bool value) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.setBool(key, value);
-  }
+  DB({this.fileName, this.tableName});
 
-  static Future<bool> setString(String key, String value) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.setString(key, value);
-  }
+  static Map<String, DB> _instances = {};
 
-  static Future<bool> setStringList(String key, List<String> value) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.setStringList(key, value);
-  }
+  static Future<DB> getInstance(String name) async {
+    try {
+      if (_instances[name] != null) {
+        return _instances[name];
+      }
 
-  static Future<bool> setDouble(String key, double value) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.setDouble(key, value);
-  }
+      var _dbInfo = dbInfo[name];
+      DB db = DB(fileName: _dbInfo['fileName'], tableName: _dbInfo['tableName']);
+      String path = '${await getDatabasesPath()}/${db.fileName}';
+      db.database = await openDatabase(
+        path,
+        version: _dbInfo['version'],
+        onCreate: (Database db, int version) async {
+          await db.execute(_dbInfo['initSQL']);
+        }
+      );
 
-  static Future<int> getInt(String key) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getInt(key);
-  }
-
-  static Future<bool> getBool(String key) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(key);
-  }
-
-  static Future<String> getString(String key) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getString(key);
-  }
-
-  static Future<List<String>> getStringList(String key) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getStringList(key);
-  }
-
-  static Future<double> getDouble(String key) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getDouble(key);
-  }
-
-  static Future<dynamic> get(String key) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.get(key);
-  }
-
-  static Future<bool> clear() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.clear();
+      _instances[name] = db;
+      return db;
+    } catch (_) {
+      return null;
+    }
   }
 }

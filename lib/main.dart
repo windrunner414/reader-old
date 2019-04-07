@@ -1,15 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:reader/page/reader/reader.dart';
-import 'dart:math';
 import 'package:flutter/services.dart';
-import 'package:reader/model/book.dart';
-import 'package:reader/utils/net.dart';
-import 'package:reader/config.dart';
-import 'package:reader/model/book_chapter_list.dart';
-import 'package:reader/model/book_chapter_content.dart';
-import 'package:fluttertoast/fluttertoast.dart';
-import 'package:reader/dao/data_result.dart';
-import 'package:reader/dao/book_dao.dart';
 import 'package:reader/page/reader/reader_page.dart';
 
 void main() {

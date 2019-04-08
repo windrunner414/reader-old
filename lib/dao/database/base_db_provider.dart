@@ -27,7 +27,7 @@ abstract class BaseDBProvider {
   }
 
   bool get readOnly => false;
-  bool get singleInstance => true;
+  bool get _singleInstance => true;
 
   Future<Database> get database async {
     return await openDatabase(
@@ -45,12 +45,13 @@ abstract class BaseDBProvider {
         await onOpen(db);
       },
       readOnly: readOnly,
-      singleInstance: singleInstance,
+      singleInstance: _singleInstance,
     );
   }
 
   Future<void> execute(String sql, [List<dynamic> arguments]) async
     => (await database).execute(sql, arguments);
+
   Future<List<Map<String, dynamic>>> query(String sql, [List<dynamic> arguments]) async
     => (await database).rawQuery(sql, arguments);
 }

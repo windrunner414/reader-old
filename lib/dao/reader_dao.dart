@@ -14,7 +14,7 @@ class ReaderDao extends BaseDao {
       var db = await DB.getInstance(Databases.READING_PROGRESS);
       if (db == null) return DATABASE_OPEN_FAILED;
 
-      var result = await db.database.rawQuery('SELECT * FROM ${db.config.tableName} WHERE bookId = ? LIMIT 1', [bookId]);
+      var result = await db.database.rawQuery('SELECT * FROM ${db.config.tableName} WHERE bookId = ?', [bookId]);
       return DataResult(
         data: result.isEmpty
           ? ReadingProgress.fromJson({'bookId': bookId})
@@ -46,7 +46,7 @@ class ReaderDao extends BaseDao {
       var db = await DB.getInstance(Databases.PREFERENCES);
       if (db == null) return DATABASE_OPEN_FAILED;
 
-      var result = await db.database.rawQuery('SELECT value FROM ${db.config.tableName} WHERE key = ? LIMIT 1', ['reader']);
+      var result = await db.database.rawQuery('SELECT value FROM ${db.config.tableName} WHERE key = ?', ['reader']);
       return DataResult(
         data: result.isEmpty
           ? ReaderPreferences.fromJson({})

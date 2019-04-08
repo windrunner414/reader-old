@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
 
-List calcPages({
+List pagination({
   @required String content,
   @required double fontSize,
   String fontFamily,

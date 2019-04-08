@@ -27,7 +27,13 @@ class DB {
         onCreate: config.onCreate,
         onUpgrade: config.onUpgrade,
         onDowngrade: config.onDowngrade,
-        onOpen: config.onOpen,
+        onOpen: (Database _db) async {
+          var result = await _db.rawQuery('select * from sqlite_master where type = ? and name = ?', ['table', config.tableName]);
+          if (result.length == 0) {
+            await config.onCreate(_db, config.version);
+          }
+          await config.onOpen(_db);
+        },
         readOnly: config.readOnly,
         singleInstance: config.singleInstance,
       );

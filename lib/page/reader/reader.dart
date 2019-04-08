@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:reader/page/reader/turning/page_turning.dart';
-import 'package:reader/utils/calc_pages.dart';
+import 'package:reader/page/reader/pagination.dart';
 import 'package:reader/page/reader/reader_icon.dart';
 import 'package:reader/model/reading_progress.dart';
 import 'package:reader/dao/reader_dao.dart';
@@ -216,7 +216,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader>, 
   }
 
   List _calcPages(String content) =>
-    calcPages(
+    pagination(
       content: content,
       fontSize: _preferences.fontSize,
       fontWeight: _preferences.fontWeight,

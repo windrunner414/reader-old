@@ -3,24 +3,20 @@ import 'package:flutter/material.dart';
 
 part 'reader_preferences.g.dart';
 
-class _ColorConverter {
-  static Color fromJson(Color defaultValue, int json) {
-    return json == null ? defaultValue : Color(json);
-  }
+class _ColorConverter implements JsonConverter<Color, int> {
+  const _ColorConverter();
 
-  static int toJson(Color object) {
-    return object?.value;
-  }
+  Color fromJson(int json) => Color(json);
+
+  int toJson(Color object) => object.value;
 }
 
-class _FontWeightConverter {
-  static FontWeight fromJson(FontWeight defaultValue, int json) {
-    return json == null ? defaultValue : FontWeight.values[json];
-  }
+class _FontWeightConverter implements JsonConverter<FontWeight, int> {
+  const _FontWeightConverter();
 
-  static int toJson(FontWeight object) {
-    return object?.index;
-  }
+  FontWeight fromJson(int json) => FontWeight.values[json];
+
+  int toJson(FontWeight object) => object.index;
 }
 
 enum PageTurningType {
@@ -33,52 +29,34 @@ enum PageTurningType {
 
 @JsonSerializable()
 class ReaderPreferences {
-  @JsonKey(defaultValue: PageTurningType.COVERAGE, name: 'pageTurning')
+  @JsonKey(name: 'pageTurning')
   PageTurningType pageTurning;
 
-  static Color _backgroundFromJson(int v) => _ColorConverter.fromJson(Color.fromRGBO(213, 239, 210, 1), v);
-
-  @JsonKey(
-    name: 'background',
-    nullable: false,
-    fromJson: _backgroundFromJson,
-    toJson: _ColorConverter.toJson,
-  )
+  @JsonKey(name: 'background')
+  @_ColorConverter()
   Color background;
 
-  static Color _fontColorFromJson(int v) => _ColorConverter.fromJson(Colors.black87, v);
-
-  @JsonKey(
-    name: 'fontColor',
-    nullable: false,
-    fromJson: _fontColorFromJson,
-    toJson: _ColorConverter.toJson,
-  )
+  @JsonKey(name: 'fontColor')
+  @_ColorConverter()
   Color fontColor;
 
-  @JsonKey(defaultValue: 18, name: 'fontSize')
+  @JsonKey(name: 'fontSize')
   double fontSize;
 
-  static FontWeight _fontWeightFromJson(int v) => _FontWeightConverter.fromJson(FontWeight.normal, v);
-
-  @JsonKey(
-    name: 'fontWeight',
-    nullable: false,
-    fromJson: _fontWeightFromJson,
-    toJson: _FontWeightConverter.toJson,
-  )
+  @JsonKey(name: 'fontWeight')
+  @_FontWeightConverter()
   FontWeight fontWeight;
 
-  @JsonKey(defaultValue: 1.3, name: 'height')
+  @JsonKey(name: 'height')
   double height;
 
-  @JsonKey(defaultValue: 1, name: 'paragraphHeight')
+  @JsonKey(name: 'paragraphHeight')
   double paragraphHeight;
 
-  @JsonKey(defaultValue: true, name: 'fullScreen')
+  @JsonKey(name: 'fullScreen')
   bool fullScreen;
 
-  @JsonKey(defaultValue: false, name: 'nightMode')
+  @JsonKey(name: 'nightMode')
   bool nightMode;
 
   @JsonKey(ignore: true)

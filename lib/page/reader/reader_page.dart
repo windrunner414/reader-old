@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:reader/page/state_with_net_manager.dart';
+import 'package:reader/widget/task_cancel_token_provider.dart';
 import 'package:reader/page/reader/reader.dart';
 import 'package:reader/dao/book_dao.dart';
 import 'package:reader/dao/data_result.dart';
@@ -13,7 +13,7 @@ class ReaderPage extends StatefulWidget {
   _ReaderPageState createState() => _ReaderPageState();
 }
 
-class _ReaderPageState extends StateWithNetManager<ReaderPage> {
+class _ReaderPageState extends State<ReaderPage> with TaskCancelTokenProviderStateMixin<ReaderPage> {
   BookDao _bookDao;
 
   @override

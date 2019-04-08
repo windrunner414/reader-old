@@ -1,5 +1,6 @@
 import 'package:reader/utils/worker.dart';
-import 'package:reader/utils/net.dart';
+import 'package:reader/utils/net.dart' show Response;
+import 'package:reader/utils/task_cancel_token.dart';
 
 const DATABASE_OPEN_FAILED = DataResult(status: DataResultStatus.ERROR, msg: '数据库打开失败');
 const DATABASE_QUERY_FAILED = DataResult(status: DataResultStatus.ERROR, msg: '数据库查询操作失败');
@@ -36,9 +37,6 @@ Future<DataResult> requestAndParse({
       status: DataResultStatus.SUCCESS,
     );
   } catch (e) {
-    if (e is DioError && CancelToken.isCancel(e)) {
-      return REQUEST_CANCELED;
-    }
-    return REQUEST_FAILED;
+    return TaskCancelToken.isCancel(e) ? REQUEST_CANCELED : REQUEST_FAILED;
   }
 }

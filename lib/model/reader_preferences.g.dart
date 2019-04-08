@@ -9,27 +9,36 @@ part of 'reader_preferences.dart';
 ReaderPreferences _$ReaderPreferencesFromJson(Map<String, dynamic> json) {
   return ReaderPreferences(
       pageTurning:
-          _$enumDecodeNullable(_$PageTurningTypeEnumMap, json['pageTurning']) ??
-              PageTurningType.COVERAGE,
-      background:
-          ReaderPreferences._backgroundFromJson(json['background'] as int),
-      fontColor: ReaderPreferences._fontColorFromJson(json['fontColor'] as int),
-      fontSize: (json['fontSize'] as num)?.toDouble() ?? 18,
-      fontWeight:
-          ReaderPreferences._fontWeightFromJson(json['fontWeight'] as int),
-      height: (json['height'] as num)?.toDouble() ?? 1.3,
-      paragraphHeight: (json['paragraphHeight'] as num)?.toDouble() ?? 1,
-      fullScreen: json['fullScreen'] as bool ?? true,
-      nightMode: json['nightMode'] as bool ?? false);
+          _$enumDecodeNullable(_$PageTurningTypeEnumMap, json['pageTurning']),
+      background: json['background'] == null
+          ? null
+          : const _ColorConverter().fromJson(json['background'] as int),
+      fontColor: json['fontColor'] == null
+          ? null
+          : const _ColorConverter().fromJson(json['fontColor'] as int),
+      fontSize: (json['fontSize'] as num)?.toDouble(),
+      fontWeight: json['fontWeight'] == null
+          ? null
+          : const _FontWeightConverter().fromJson(json['fontWeight'] as int),
+      height: (json['height'] as num)?.toDouble(),
+      paragraphHeight: (json['paragraphHeight'] as num)?.toDouble(),
+      fullScreen: json['fullScreen'] as bool,
+      nightMode: json['nightMode'] as bool);
 }
 
 Map<String, dynamic> _$ReaderPreferencesToJson(ReaderPreferences instance) =>
     <String, dynamic>{
       'pageTurning': _$PageTurningTypeEnumMap[instance.pageTurning],
-      'background': _ColorConverter.toJson(instance.background),
-      'fontColor': _ColorConverter.toJson(instance.fontColor),
+      'background': instance.background == null
+          ? null
+          : const _ColorConverter().toJson(instance.background),
+      'fontColor': instance.fontColor == null
+          ? null
+          : const _ColorConverter().toJson(instance.fontColor),
       'fontSize': instance.fontSize,
-      'fontWeight': _FontWeightConverter.toJson(instance.fontWeight),
+      'fontWeight': instance.fontWeight == null
+          ? null
+          : const _FontWeightConverter().toJson(instance.fontWeight),
       'height': instance.height,
       'paragraphHeight': instance.paragraphHeight,
       'fullScreen': instance.fullScreen,

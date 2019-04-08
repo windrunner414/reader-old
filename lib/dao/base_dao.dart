@@ -1,7 +1,7 @@
-import 'package:reader/utils/net.dart';
+import 'package:reader/utils/task_cancel_token.dart';
 
 class BaseDao {
-  final CancelToken cancelToken;
+  final TaskCancelToken cancelToken;
 
   BaseDao({this.cancelToken});
 }

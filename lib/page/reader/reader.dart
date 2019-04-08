@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:reader/page/reader/turning/page_turning.dart';
-import 'package:reader/page/reader/calc_pages.dart';
+import 'package:reader/utils/calc_pages.dart';
 import 'package:reader/page/reader/reader_icon.dart';
 import 'package:reader/model/reading_progress.dart';
 import 'package:reader/dao/reader_dao.dart';
 import 'package:reader/utils/time.dart';
 import 'dart:math';
 import 'dart:ui';
-import 'dart:convert';
 import 'dart:async';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:flutter/services.dart';
@@ -16,9 +15,10 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:battery/battery.dart';
 import 'package:flutter_seekbar/flutter_seekbar.dart';
 import 'package:reader/model/book_chapter_list.dart';
-import 'package:reader/page/state_with_net_manager.dart';
+import 'package:reader/widget/task_cancel_token_provider.dart';
 import 'package:reader/dao/data_result.dart';
 import 'package:reader/model/reader_preferences.dart';
+import 'package:reader/config/reader_config.dart';
 
 typedef getChapterContentCallback = Future<String> Function(String chapterId);
 typedef getChapterListCallback = Future<List<BookChapterInfo>> Function(String bookId);
@@ -61,7 +61,7 @@ class Reader extends StatefulWidget {
 
 typedef _layerBuilder = Widget Function();
 
-class _ReaderState extends StateWithNetManager<Reader> with TickerProviderStateMixin<Reader> {
+class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader>, TaskCancelTokenProviderStateMixin<Reader> {
   ReaderPreferences _preferences;
   ReaderPreferences get preferences => _preferences;
 
@@ -149,23 +149,26 @@ class _ReaderState extends StateWithNetManager<Reader> with TickerProviderStateM
   }
 
   void setPreferences(ReaderPreferences pref) {
-    assert(pref != null);
-
     bool isInit = _preferences == null;
-    Map<String, dynamic> prefJson = pref.toJson();
-    Map<String, dynamic> currPrefJson = isInit ? {} : _preferences.toJson();
+    Map<String, dynamic> prefJson = pref?.toJson() ?? {};
+    Map<String, dynamic> currPrefJson = isInit ? ReaderConfig.defaultPreferences.toJson() : _preferences.toJson();
+
     prefJson.forEach((String k, v) {
       if (v != null) {
-        if (k == 'fullScreen' && v != currPrefJson[k]) {
+        if (!isInit && k == 'fullScreen' && v != currPrefJson[k]) {
           _setFullScreen(v);
         }
         currPrefJson[k] = v;
       }
     });
     _preferences = ReaderPreferences.fromJson(currPrefJson);
-    if (!isInit) _readerDao.savePreferences(_preferences);
 
-    setState(() => _reCalcPages());
+    if (!isInit) {
+      _readerDao.savePreferences(_preferences);
+      setState(() => _reCalcPages());
+    } else {
+      _setFullScreen(_preferences.fullScreen);
+    }
   }
 
   Future<void> _restoreState() async {
@@ -185,7 +188,7 @@ class _ReaderState extends StateWithNetManager<Reader> with TickerProviderStateM
       setPreferences(result.data);
     } else {
       Fluttertoast.showToast(msg: '阅读器设置获取失败');
-      setPreferences(ReaderPreferences.fromJson({}));
+      setPreferences(null);
     }
 
     _hideLoading();

@@ -2,7 +2,6 @@ import 'package:reader/utils/worker.dart';
 import 'package:reader/utils/net.dart' show Response;
 import 'package:reader/utils/task_cancel_token.dart';
 
-const DATABASE_OPEN_FAILED = DataResult(status: DataResultStatus.ERROR, msg: '数据库打开失败');
 const DATABASE_QUERY_FAILED = DataResult(status: DataResultStatus.ERROR, msg: '数据库查询操作失败');
 const DATABASE_UPDATE_FAILED = DataResult(status: DataResultStatus.ERROR, msg: '数据库更新操作失败');
 const REQUEST_CANCELED = DataResult(status: DataResultStatus.CANCELED, msg: '请求已取消');

@@ -2,7 +2,8 @@ import 'package:reader/dao/base_dao.dart';
 import 'package:reader/dao/data_result.dart';
 import 'package:reader/model/reading_progress.dart';
 import 'package:reader/model/reader_preferences.dart';
-import 'package:reader/utils/db.dart';
+import 'package:reader/dao/database/reading_progress_db_provider.dart';
+import 'package:reader/dao/database/preferences_db_provider.dart';
 import 'package:reader/utils/task_cancel_token.dart';
 import 'dart:convert';
 
@@ -11,10 +12,8 @@ class ReaderDao extends BaseDao {
 
   Future<DataResult> getReadingProgress(String bookId) async {
     try {
-      var db = await DB.getInstance(Databases.READING_PROGRESS);
-      if (db == null) return DATABASE_OPEN_FAILED;
-
-      var result = await db.database.rawQuery('SELECT * FROM ${db.config.tableName} WHERE bookId = ?', [bookId]);
+      var db = ReadingProgressDBProvider();
+      var result = await db.query('SELECT * FROM ${db.tableName} WHERE bookId = ?', [bookId]);
       return DataResult(
         data: result.isEmpty
           ? ReadingProgress.fromJson({'bookId': bookId})
@@ -28,11 +27,9 @@ class ReaderDao extends BaseDao {
 
   Future<DataResult> saveReadingProgress(ReadingProgress progress) async {
     try {
-      var db = await DB.getInstance(Databases.READING_PROGRESS);
-      if (db == null) return DATABASE_OPEN_FAILED;
-
-      await db.database.execute(
-        'REPLACE INTO ${db.config.tableName}(bookId, chapterIndex, pageIndex) VALUES(?, ?, ?)',
+      var db = ReadingProgressDBProvider();
+      await db.execute(
+        'REPLACE INTO ${db.tableName}(bookId, chapterIndex, pageIndex) VALUES(?, ?, ?)',
         [progress.bookId, progress.chapterIndex, progress.pageIndex],
       );
       return OPERATION_SUCCESS;
@@ -43,10 +40,8 @@ class ReaderDao extends BaseDao {
 
   Future<DataResult> getPreferences() async {
     try {
-      var db = await DB.getInstance(Databases.PREFERENCES);
-      if (db == null) return DATABASE_OPEN_FAILED;
-
-      var result = await db.database.rawQuery('SELECT value FROM ${db.config.tableName} WHERE key = ?', ['reader']);
+      var db = PreferencesDBProvider();
+      var result = await db.query('SELECT value FROM ${db.tableName} WHERE key = ?', ['reader']);
       return DataResult(
         data: result.isEmpty
           ? ReaderPreferences.fromJson({})
@@ -60,11 +55,9 @@ class ReaderDao extends BaseDao {
 
   Future<DataResult> savePreferences(ReaderPreferences preferences) async {
     try {
-      var db = await DB.getInstance(Databases.PREFERENCES);
-      if (db == null) return DATABASE_OPEN_FAILED;
-
-      await db.database.execute(
-        'REPLACE INTO ${db.config.tableName}(key, value) VALUES(?, ?)',
+      var db = PreferencesDBProvider();
+      await db.execute(
+        'REPLACE INTO ${db.tableName}(key, value) VALUES(?, ?)',
         ['reader', json.encode(preferences)],
       );
       return OPERATION_SUCCESS;

@@ -13,7 +13,7 @@ class BookDao extends BaseDao {
     return null;
   }
 
-  static Future<BookChapterList> _getChapterList(String data) async
+  static Future<BookChapterList> _parseChapterList(String data) async
     => BookChapterList.fromJson(await RuleConfig.parseChapterListResult(data));
 
   Future<DataResult> getChapterList(String id) {
@@ -21,11 +21,11 @@ class BookDao extends BaseDao {
       request: () async {
         return net.get(await RuleConfig.getChapterListPath(id), cancelToken: cancelToken.net);
       },
-      parse: _getChapterList,
+      parse: _parseChapterList,
     );
   }
 
-  static Future<BookChapterContent> _getChapterContent(String data) async
+  static Future<BookChapterContent> _parseChapterContent(String data) async
     => BookChapterContent.fromJson(await RuleConfig.parseChapterContentResult(data));
 
   Future<DataResult> getChapterContent(String id) {
@@ -33,7 +33,7 @@ class BookDao extends BaseDao {
       request: () async {
         return net.get(await RuleConfig.getChapterContentPath(id), cancelToken: cancelToken.net);
       },
-      parse: _getChapterContent,
+      parse: _parseChapterContent,
     );
   }
 }

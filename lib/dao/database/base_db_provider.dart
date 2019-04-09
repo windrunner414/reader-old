@@ -1,6 +1,8 @@
 import 'package:sqflite/sqflite.dart';
 import 'dart:async' show FutureOr;
 
+export 'package:sqflite/sqflite.dart';
+
 abstract class BaseDBProvider {
   String get dbName;
   String get tableName;

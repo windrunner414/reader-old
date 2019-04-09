@@ -13,25 +13,25 @@ class BookDao extends BaseDao {
     return null;
   }
 
-  static BookChapterList _getChapterList(String data)
-    => BookChapterList.fromJson(RuleConfig.parseChapterListResult(data));
+  static Future<BookChapterList> _getChapterList(String data) async
+    => BookChapterList.fromJson(await RuleConfig.parseChapterListResult(data));
 
   Future<DataResult> getChapterList(String id) {
     return requestAndParse(
-      request: () {
-        return net.get(RuleConfig.makeChapterListPath(id), cancelToken: cancelToken.net);
+      request: () async {
+        return net.get(await RuleConfig.getChapterListPath(id), cancelToken: cancelToken.net);
       },
       parse: _getChapterList,
     );
   }
 
-  static BookChapterContent _getChapterContent(String data)
-    => BookChapterContent.fromJson(RuleConfig.parseChapterContentResult(data));
+  static Future<BookChapterContent> _getChapterContent(String data) async
+    => BookChapterContent.fromJson(await RuleConfig.parseChapterContentResult(data));
 
   Future<DataResult> getChapterContent(String id) {
     return requestAndParse(
-      request: () {
-        return net.get(RuleConfig.makeChapterContentPath(id), cancelToken: cancelToken.net);
+      request: () async {
+        return net.get(await RuleConfig.getChapterContentPath(id), cancelToken: cancelToken.net);
       },
       parse: _getChapterContent,
     );

@@ -1,8 +1,6 @@
 import 'package:sqflite/sqflite.dart';
 import 'dart:async' show FutureOr;
 
-export 'package:sqflite/sqflite.dart';
-
 abstract class BaseDBProvider {
   String get dbName;
   String get tableName;
@@ -38,7 +36,7 @@ abstract class BaseDBProvider {
       onUpgrade: onUpgrade,
       onDowngrade: onDowngrade,
       onOpen: (Database db) async {
-        var result = await db.rawQuery('select * from sqlite_master where type = ? and name = ?', ['table', tableName]);
+        var result = await db.rawQuery('SELECT * FROM sqlite_master WHERE type = ? AND name = ?', ['table', tableName]);
         if (result.length == 0) {
           await onCreate(db, version);
         }

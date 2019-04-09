@@ -1,7 +1,5 @@
 import 'package:reader/dao/database/base_db_provider.dart';
 
-export 'package:sqflite/sqflite.dart';
-
 class ReadingProgressDBProvider extends BaseDBProvider {
   @override
   String get dbName => 'reading_progress';

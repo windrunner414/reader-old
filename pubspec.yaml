@@ -21,7 +21,6 @@ dependencies:
   battery: ^0.3.0
   dio: ^2.1.0
   worker2: ^1.0.1
-  flutter_isolate: ^1.0.0+9
   encrypt: ^2.1.0
   lpinyin: ^1.0.7
   json_annotation: ^2.1.0

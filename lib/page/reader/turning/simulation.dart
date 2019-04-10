@@ -28,10 +28,10 @@ class SimulationPageTurningPainter extends PageTurningPainter {
   _AnimType _type;
   Path _pathAll, _pathA, _pathB, _pathC, _pathD;
 
-  static final _shadow1Paint1 = Shadow(color: Color.fromRGBO(0, 0, 0, 0.7), blurRadius: 5).toPaint();
-  static final _shadow1Paint2 = Shadow(color: Color.fromRGBO(0, 0, 0, 0.7), blurRadius: 5).toPaint();
-  static final _shadow2Paint1 = Shadow(color: Color.fromRGBO(0, 0, 0, 0.3), blurRadius: 8).toPaint();
-  static final _shadow2Paint2 = Shadow(color: Color.fromRGBO(0, 0, 0, 0.35), blurRadius: 10).toPaint();
+  static final _shadow1Paint1 = Shadow(color: Color.fromRGBO(0, 0, 0, 0.7), blurRadius: 5).toPaint()..isAntiAlias = false;
+  static final _shadow1Paint2 = Shadow(color: Color.fromRGBO(0, 0, 0, 0.7), blurRadius: 5).toPaint()..isAntiAlias = false;
+  static final _shadow2Paint1 = Shadow(color: Color.fromRGBO(0, 0, 0, 0.3), blurRadius: 8).toPaint()..isAntiAlias = false;
+  static final _shadow2Paint2 = Shadow(color: Color.fromRGBO(0, 0, 0, 0.35), blurRadius: 10).toPaint()..isAntiAlias = false;
 
   SimulationPageTurningPainter({
     @required this.beginTouchPoint,
@@ -208,7 +208,7 @@ class SimulationPageTurningPainter extends PageTurningPainter {
 
   void _drawPathA() {
     canvas.save();
-    canvas.clipPath(_pathA);
+    canvas.clipPath(_pathA, doAntiAlias: false);
     if (!toPrev && currentPage != null) {
       canvas.drawPicture(currentPage);
     } else if (toPrev && prevPage != null) {
@@ -258,7 +258,7 @@ class SimulationPageTurningPainter extends PageTurningPainter {
     }
 
     canvas.save();
-    canvas.clipPath(_pathA);
+    canvas.clipPath(_pathA, doAntiAlias: false);
     if (_type == _AnimType.RIGHT_MIDDLE || _type == _AnimType.LEFT) {
       canvas.drawPath(Path()
         ..moveTo(a.dx, 0)
@@ -286,7 +286,7 @@ class SimulationPageTurningPainter extends PageTurningPainter {
   void _drawPathD() {
     if (background == null) return;
     canvas.save();
-    canvas.clipPath(_pathD);
+    canvas.clipPath(_pathD, doAntiAlias: false);
     double eh = sqrt((f.dx - e.dx) * (f.dx - e.dx) + (h.dy - f.dy) * (h.dy - f.dy));
     double sin0 = (f.dx - e.dx) / eh;
     double cos0 = (h.dy - f.dy) / eh;
@@ -357,19 +357,19 @@ class SimulationPageTurningPainter extends PageTurningPainter {
     }
 
     canvas.save();
-    canvas.clipPath(_pathC);
+    canvas.clipPath(_pathC, doAntiAlias: false);
     canvas.drawPath(pathShadow1, _shadow2Paint1);
     canvas.restore();
 
     canvas.save();
-    canvas.clipPath(_pathD);
+    canvas.clipPath(_pathD, doAntiAlias: false);
     canvas.drawPath(pathShadow2, _shadow2Paint2);
     canvas.restore();
   }
 
   void _drawPathC() {
     canvas.save();
-    canvas.clipPath(_pathC);
+    canvas.clipPath(_pathC, doAntiAlias: false);
     if (toPrev && currentPage != null) {
       canvas.drawPicture(currentPage);
     } else if (!toPrev && nextPage != null) {

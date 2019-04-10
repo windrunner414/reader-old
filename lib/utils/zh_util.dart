@@ -1,7 +1,7 @@
-import 'package:lpinyin/lpinyin.dart';
+import 'package:flutter_opencc/flutter_opencc.dart';
 
 class ZHUtil {
-  static String convertToTraditional(String content) => ChineseHelper.convertToTraditionalChinese(content);
+  static Future<String> convertToTraditional(String content) => FlutterOpencc.convert(content, config: OpenccConfig.s2t);
 
-  static String convertToSimplified(String content) => ChineseHelper.convertToSimplifiedChinese(content);
+  static Future<String> convertToSimplified(String content) => FlutterOpencc.convert(content, config: OpenccConfig.t2s);
 }

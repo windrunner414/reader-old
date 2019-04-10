@@ -35,8 +35,8 @@ class _ReaderPageState extends State<ReaderPage> with TaskCancelTokenProviderSta
       download: (String id, List<String> chapterId) {
 
       },
-      getChapterContent: (String id) async {
-        DataResult result = await _bookDao.getChapterContent(id);
+      getChapterContent: (String bookId, String id) async {
+        DataResult result = await _bookDao.getChapterContent(bookId, id);
         if (result.status != DataResultStatus.SUCCESS) return null;
         return result.data.content;
       },

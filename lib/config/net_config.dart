@@ -9,7 +9,7 @@ class NetConfig {
     receiveTimeout: 8000,
 
     /// api基础url，实际请求url为基础url + 路径
-    baseUrl: 'https://m.cread.tw',
+    baseUrl: 'https://www.zhuidu.cc',
 
     /// api返回数据类型，设置为plain不要改动
     responseType: ResponseType.plain,

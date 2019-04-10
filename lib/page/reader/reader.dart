@@ -20,7 +20,7 @@ import 'package:reader/dao/data_result.dart';
 import 'package:reader/model/reader_preferences.dart';
 import 'package:reader/config/reader_config.dart';
 
-typedef getChapterContentCallback = Future<String> Function(String chapterId);
+typedef getChapterContentCallback = Future<String> Function(String bookId, String chapterId);
 typedef getChapterListCallback = Future<List<BookChapterInfo>> Function(String bookId);
 typedef downloadCallback = void Function(String bookId, List<String> downloadChapterIDList);
 typedef isCachedCallback = bool Function(String chapterId);
@@ -261,7 +261,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader>, 
 
     _currentChapter = _currentChapter.clamp(0, _chapterList.length - 1);
 
-    String content = await widget.getChapterContent(_chapterList[_currentChapter].id);
+    String content = await widget.getChapterContent(widget.bookId, _chapterList[_currentChapter].id);
     if (content == null || content.isEmpty) {
       _hideLoading(false);
       return;
@@ -306,7 +306,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader>, 
           || _cachingChapters[i] != null) continue;
 
       _cachingChapters[i] = 1;
-      String content = await widget.getChapterContent(_chapterList[i].id);
+      String content = await widget.getChapterContent(widget.bookId, _chapterList[i].id);
 
       if (content == null || content.isEmpty
           || _chapterPages[i] != null
@@ -462,7 +462,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader>, 
     _inLoading = true;
     await Future.delayed(Duration.zero);
     _showLoading();
-    String content = await widget.getChapterContent(_chapterList[chapter].id);
+    String content = await widget.getChapterContent(widget.bookId, _chapterList[chapter].id);
     if (content == null || content.isEmpty) {
       _hideLoading(false);
       _currentChapter = chapter;

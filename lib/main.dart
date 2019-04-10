@@ -40,7 +40,7 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       appBar: AppBar(title: Text('reader')),
       body: FlatButton(onPressed: () {
-        Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) => ReaderPage(bookId: '1', bookName: '修罗武神')));
+        Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) => ReaderPage(bookId: 'WanGuDaDi', bookName: '万古大帝')));
       }, child: Text('打开阅读器')),
     );
   }

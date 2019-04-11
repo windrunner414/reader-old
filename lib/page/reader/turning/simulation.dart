@@ -28,10 +28,10 @@ class SimulationPageTurningPainter extends PageTurningPainter {
   _AnimType _type;
   Path _pathAll, _pathA, _pathB, _pathC, _pathD;
 
-  static final _shadow1Paint1 = Shadow(color: Color.fromRGBO(0, 0, 0, 0.7), blurRadius: 5).toPaint();
-  static final _shadow1Paint2 = Shadow(color: Color.fromRGBO(0, 0, 0, 0.7), blurRadius: 5).toPaint();
-  static final _shadow2Paint1 = Shadow(color: Color.fromRGBO(0, 0, 0, 0.3), blurRadius: 8).toPaint();
-  static final _shadow2Paint2 = Shadow(color: Color.fromRGBO(0, 0, 0, 0.35), blurRadius: 10).toPaint();
+  static final _shadow1Paint1 = Shadow(color: Color.fromRGBO(0, 0, 0, 0.5), blurRadius: 8).toPaint();
+  static final _shadow1Paint2 = Shadow(color: Color.fromRGBO(0, 0, 0, 0.5), blurRadius: 8).toPaint();
+  static final _shadow2Paint1 = Shadow(color: Color.fromRGBO(0, 0, 0, 0.25), blurRadius: 15).toPaint();
+  static final _shadow2Paint2 = Shadow(color: Color.fromRGBO(0, 0, 0, 0.3), blurRadius: 20).toPaint();
 
   SimulationPageTurningPainter({
     @required this.beginTouchPoint,

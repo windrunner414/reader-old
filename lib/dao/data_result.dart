@@ -1,4 +1,4 @@
-import 'package:reader/utils/worker.dart';
+import 'package:reader/utils/worker_util.dart';
 import 'package:reader/utils/net.dart' show Response;
 import 'package:reader/utils/task_cancel_token.dart';
 
@@ -32,7 +32,7 @@ Future<DataResult> requestAndParse({
   try {
     Response response = await request();
     return DataResult(
-      data: await taskWorker.handle(AnonymousTask(parse, positionalArguments: [response.data])),
+      data: await WorkerUtil.run(parse, positionalArguments: [response.data]),
       status: DataResultStatus.SUCCESS,
     );
   } catch (e) {

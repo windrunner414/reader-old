@@ -124,7 +124,7 @@ class SimulationPageTurningPainter extends PageTurningPainter {
     a = _calcPointA(touchPoint);
     _calcPointXY();
 
-    if (c.dx < 0 && a.dx.clamp(0.0, size.width) == a.dx && a.dy.clamp(0.0, size.height) == a.dy) {
+    if (c.dx < 0 && a.dx >= 0 && a.dx <= size.width && a.dy >= 0 && a.dy <= size.height) {
       _calcPointAByTouchPoint();
       _calcPointXY();
     }

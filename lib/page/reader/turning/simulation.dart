@@ -75,8 +75,8 @@ class SimulationPageTurningPainter extends PageTurningPainter {
     h = Offset(f.dx, (g.dy - (f.dx - g.dx) * (f.dx - g.dx) / (f.dy - g.dy)));
     c = Offset(e.dx - (f.dx - e.dx) / 2, f.dy);
     j = Offset(f.dx, h.dy - (f.dy - h.dy) / 2);
-    b = _getIntersectionPoint(a,e,c,j);
-    k = _getIntersectionPoint(a,h,c,j);
+    b = _getIntersectionPoint(a, e, c, j);
+    k = _getIntersectionPoint(a, h, c, j);
     d = Offset((c.dx + 2 * e.dx + b.dx) / 4, (c.dy + 2 * e.dy + b.dy) / 4);
     i = Offset((j.dx + 2 * h.dx + k.dx) / 4, (j.dy + 2 * h.dy + k.dy) / 4);
   }

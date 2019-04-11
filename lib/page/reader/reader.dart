@@ -9,7 +9,7 @@ import 'package:reader/utils/time.dart';
 import 'dart:math';
 import 'dart:ui';
 import 'dart:async';
-import 'package:fluttertoast/fluttertoast.dart';
+import 'package:reader/utils/toast_util.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:battery/battery.dart';
@@ -133,7 +133,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader>, 
   void _hideLoading([bool success = true]) {
     setState(() {
       if (!success) {
-        Fluttertoast.showToast(msg: '加载失败');
+        ToastUtil.show('加载失败');
         _loadError = true;
       }
       _inLoading = false;
@@ -178,7 +178,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader>, 
     if (result.status == DataResultStatus.SUCCESS) {
       _readingProgress = result.data;
     } else {
-      Fluttertoast.showToast(msg: '阅读记录获取失败');
+      ToastUtil.show('阅读记录获取失败');
       _readingProgress = ReadingProgress.fromJson({'bookId': widget.bookId});
     }
 
@@ -187,7 +187,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader>, 
     if (result.status == DataResultStatus.SUCCESS) {
       setPreferences(result.data);
     } else {
-      Fluttertoast.showToast(msg: '阅读器设置获取失败');
+      ToastUtil.show('阅读器设置获取失败');
       setPreferences(null);
     }
 
@@ -639,9 +639,9 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader>, 
   void _onPanEnd(DragEndDetails details) {
     if (_touchStartPoint == null) {
       if (_toPrev) {
-        Fluttertoast.showToast(msg: '没有上一章了');
+        ToastUtil.show('没有上一章了');
       } else {
-        Fluttertoast.showToast(msg: '没有下一章了');
+        ToastUtil.show('没有下一章了');
       }
       _resetTouch();
       return;
@@ -1486,7 +1486,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader>, 
                         if (_progressTimer == null) return;
                         if (_progressTimer.tick == 0) {
                           _progressTempChapter ??= _currentChapter;
-                          if (_progressTempChapter <= 0) Fluttertoast.showToast(msg: '没有上一章了');
+                          if (_progressTempChapter <= 0) ToastUtil.show('没有上一章了');
                           else --_progressTempChapter;
                         }
                         stopTimer();
@@ -1533,7 +1533,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader>, 
                         if (_progressTimer == null) return;
                         if (_progressTimer.tick == 0) {
                           _progressTempChapter ??= _currentChapter;
-                          if (_progressTempChapter >= _chapterList.length - 1) Fluttertoast.showToast(msg: '没有下一章了');
+                          if (_progressTempChapter >= _chapterList.length - 1) ToastUtil.show('没有下一章了');
                           else ++_progressTempChapter;
                         }
                         stopTimer();

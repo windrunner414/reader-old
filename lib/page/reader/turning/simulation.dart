@@ -3,7 +3,7 @@ import 'dart:ui';
 import 'dart:math';
 import 'package:reader/page/reader/turning/page_turning.dart';
 
-enum _TurningType {
+enum _AnimType {
   LEFT,
   RIGHT_TOP,
   RIGHT_MIDDLE,
@@ -25,7 +25,7 @@ class SimulationPageTurningPainter extends PageTurningPainter {
         && _pathC.contains(Offset(0, size.height)) && _pathC.contains(Offset(size.width, size.height)))
   );
 
-  _TurningType _type;
+  _AnimType _type;
   Path _pathAll, _pathA, _pathB, _pathC, _pathD;
 
   static final _shadow1Paint1 = Shadow(color: Color.fromRGBO(0, 0, 0, 0.7), blurRadius: 5).toPaint();
@@ -44,7 +44,7 @@ class SimulationPageTurningPainter extends PageTurningPainter {
   });
 
   Offset _calcPointA(Offset ap) {
-    if (_type == _TurningType.RIGHT_MIDDLE || _type == _TurningType.LEFT) {
+    if (_type == _AnimType.RIGHT_MIDDLE || _type == _AnimType.LEFT) {
       return Offset(ap.dx, size.height / 2 - 0.1);
     }
 
@@ -105,18 +105,18 @@ class SimulationPageTurningPainter extends PageTurningPainter {
 
   void _calcPoint() {
     if (toPrev) {
-      _type = _TurningType.LEFT;
+      _type = _AnimType.LEFT;
       f = Offset(size.width, size.height / 2);
     } else {
       if (beginTouchPoint.dy < size.height / 3) {
-        _type = _TurningType.RIGHT_TOP;
+        _type = _AnimType.RIGHT_TOP;
         f = Offset(size.width, 0);
       } else if (beginTouchPoint.dy >= size.height / 3 &&
           beginTouchPoint.dy < size.height / 3 * 2) {
-        _type = _TurningType.RIGHT_MIDDLE;
+        _type = _AnimType.RIGHT_MIDDLE;
         f = Offset(size.width, size.height / 2);
       } else {
-        _type = _TurningType.RIGHT_BOTTOM;
+        _type = _AnimType.RIGHT_BOTTOM;
         f = Offset(size.width, size.height);
       }
     }
@@ -139,7 +139,7 @@ class SimulationPageTurningPainter extends PageTurningPainter {
       ..close();
 
     switch (_type) {
-      case _TurningType.RIGHT_BOTTOM:
+      case _AnimType.RIGHT_BOTTOM:
         _pathA = Path()
           ..moveTo(0, 0)
           ..lineTo(0, size.height)
@@ -151,8 +151,8 @@ class SimulationPageTurningPainter extends PageTurningPainter {
           ..lineTo(size.width, 0)
           ..close();
         break;
-      case _TurningType.LEFT:
-      case _TurningType.RIGHT_MIDDLE:
+      case _AnimType.LEFT:
+      case _AnimType.RIGHT_MIDDLE:
         _pathA = Path()
           ..moveTo(0, 0)
           ..lineTo(0, size.height)
@@ -160,7 +160,7 @@ class SimulationPageTurningPainter extends PageTurningPainter {
           ..lineTo(a.dx, 0)
           ..close();
         break;
-      case _TurningType.RIGHT_TOP:
+      case _AnimType.RIGHT_TOP:
         _pathA = Path()
           ..moveTo(0, 0)
           ..lineTo(0, size.height)
@@ -176,7 +176,7 @@ class SimulationPageTurningPainter extends PageTurningPainter {
         break;
     }
 
-    if (_type == _TurningType.RIGHT_MIDDLE || _type == _TurningType.LEFT) {
+    if (_type == _AnimType.RIGHT_MIDDLE || _type == _AnimType.LEFT) {
       _pathB = Path()
         ..moveTo(a.dx, 0)
         ..lineTo(d.dx, 0)
@@ -225,10 +225,10 @@ class SimulationPageTurningPainter extends PageTurningPainter {
     double y1;
 
     switch (_type) {
-      case _TurningType.RIGHT_BOTTOM:
+      case _AnimType.RIGHT_BOTTOM:
         y1 = a.dy - (size.height - a.dy) * s;
         break;
-      case _TurningType.RIGHT_TOP:
+      case _AnimType.RIGHT_TOP:
         y1 = a.dy * (1 + s);
         break;
       default:
@@ -241,13 +241,13 @@ class SimulationPageTurningPainter extends PageTurningPainter {
     Offset shadow1Point, shadow1Point2, shadow2Point, shadow2Point2;
 
     switch (_type) {
-      case _TurningType.RIGHT_BOTTOM:
+      case _AnimType.RIGHT_BOTTOM:
         shadow1Point = Offset(size.width, k1 * (size.width - x1) + y1);
         shadow1Point2 = _getIntersectionPoint(a, k, j, h);
         shadow2Point = Offset((size.height - y1) / k2 + x1, size.height);
         shadow2Point2 = _getIntersectionPoint(a, b, c, e);
         break;
-      case _TurningType.RIGHT_TOP:
+      case _AnimType.RIGHT_TOP:
         shadow1Point = Offset(size.width, k1 * (size.width - x1) + y1);
         shadow1Point2 = _getIntersectionPoint(a, k, j, h);
         shadow2Point = Offset((-y1) / k2 + x1, 0);
@@ -259,7 +259,7 @@ class SimulationPageTurningPainter extends PageTurningPainter {
 
     canvas.save();
     canvas.clipPath(_pathA);
-    if (_type == _TurningType.RIGHT_MIDDLE || _type == _TurningType.LEFT) {
+    if (_type == _AnimType.RIGHT_MIDDLE || _type == _AnimType.LEFT) {
       canvas.drawPath(Path()
         ..moveTo(a.dx, 0)
         ..lineTo(x1, 0)
@@ -306,7 +306,7 @@ class SimulationPageTurningPainter extends PageTurningPainter {
   void _drawShadow2() {
     Path pathShadow1, pathShadow2;
 
-    if (_type == _TurningType.RIGHT_MIDDLE || _type == _TurningType.LEFT) {
+    if (_type == _AnimType.RIGHT_MIDDLE || _type == _AnimType.LEFT) {
       Offset x2 = _getIntersectionPoint(
           Offset((d.dx + e.dx) / 2, (d.dy + e.dy) / 2),
           Offset((i.dx + h.dx) / 2, (i.dy + h.dy) / 2),

@@ -1,6 +1,7 @@
 import 'package:encrypt/encrypt.dart';
 import 'package:crypto/crypto.dart';
 import 'dart:typed_data';
+import 'package:meta/meta.dart';
 
 class EncryptException implements Exception {
   final String message;
@@ -13,13 +14,21 @@ class EncryptException implements Exception {
 class EncryptUtil {
   EncryptUtil._();
 
-  static List<int> encryptWithIntegrityCheck({String data, Hmac hmac, Encrypter encrypter}) {
+  static List<int> encryptWithIntegrityCheck({
+    @required String data,
+    @required Hmac hmac,
+    @required Encrypter encrypter,
+  }) {
     var hash = hmac.convert(data.codeUnits);
     var encrypted = encrypter.encrypt('${hash.toString()}\n$data');
     return encrypted.bytes.toList();
   }
 
-  static String decryptWithIntegrityCheck({List<int> data, Hmac hmac, Encrypter encrypter}) {
+  static String decryptWithIntegrityCheck({
+    @required List<int> data,
+    @required Hmac hmac,
+    @required Encrypter encrypter,
+  }) {
     var encrypted = Encrypted(Uint8List.fromList(data));
     var decrypted = encrypter.decrypt(encrypted);
     var index = decrypted.indexOf('\n');

@@ -49,11 +49,11 @@ class RemoteBookDataSource implements BookDataSource {
 
   @override
   Future<ReadingProgress> getReadingProgress(String bookId) {
-
+    throw Exception('not implemented');
   }
 
   @override
   Future<void> saveReadingProgress(ReadingProgress readingProgress) {
-
+    throw Exception('not implemented');
   }
 }

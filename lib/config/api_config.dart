@@ -2,6 +2,7 @@ import 'rule/rule.dart';
 import 'package:reader/utils/http_util.dart';
 import 'package:reader/model/book_chapter_list.dart';
 import 'package:reader/model/book_chapter_content.dart';
+import 'package:meta/meta.dart';
 
 /// API配置
 /// 所有parse方法均会在isolate（taskWorker）中执行，防止阻塞UI线程
@@ -21,25 +22,30 @@ class ApiConfig {
   }
 
   /// 构造源列表请求
-  static Future<HttpRequest> makeSourceListRequest(String bookId) async {
+  static Future<HttpRequest> makeSourceListRequest({@required String bookId}) async {
 
   }
 
   /// 解析源列表响应
   /// 若未使用支持热更新的规则方案，建议在此过滤掉不支持的规则
-  static Future<List<String>> parseSourceListResponse({String response}) async {
+  static Future<List<String>> parseSourceListResponse({
+    @required String response,
+    @required String bookId,
+  }) async {
 
   }
 
   /// 构造章节列表页请求
-  static Future<HttpRequest> makeChapterListRequest({String bookId, String source})
-    => _getRuleBySource(source).makeChapterListRequest(bookId: bookId);
+  static Future<HttpRequest> makeChapterListRequest({
+    @required String bookId,
+    @required String source,
+  }) => _getRuleBySource(source).makeChapterListRequest(bookId: bookId);
 
   /// 解析章节列表页响应
   static Future<BookChapterList> parseChapterListResponse({
-    String response,
-    String bookId,
-    String source,
+    @required String response,
+    @required String bookId,
+    @required String source,
   }) => _getRuleBySource(source).parseChapterListResponse(
     response: response,
     bookId: bookId,
@@ -47,9 +53,9 @@ class ApiConfig {
 
   /// 构造章节内容页请求
   static Future<HttpRequest> makeChapterContentRequest({
-    String bookId,
-    String chapterId,
-    String source,
+    @required String bookId,
+    @required String chapterId,
+    @required String source,
   }) => _getRuleBySource(source).makeChapterContentRequest(
     bookId: bookId,
     chapterId: chapterId,
@@ -57,10 +63,10 @@ class ApiConfig {
 
   /// 解析章节内容页响应
   static Future<BookChapterContent> parseChapterContentResponse({
-    String response,
-    String bookId,
-    String chapterId,
-    String source,
+    @required String response,
+    @required String bookId,
+    @required String chapterId,
+    @required String source,
   }) => _getRuleBySource(source).parseChapterContentResponse(
     response: response,
     bookId: bookId,

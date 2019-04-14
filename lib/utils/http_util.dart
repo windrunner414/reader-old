@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:reader/config/http_config.dart';
 import 'task_cancel_token.dart';
+import 'package:meta/meta.dart';
 
 export 'package:dio/dio.dart';
 
@@ -22,7 +23,7 @@ class HttpRequest {
   final Map<String, dynamic> queryParameters;
   final Options options;
 
-  const HttpRequest({this.method = HttpMethod.get, this.path, this.data, this.queryParameters, this.options});
+  const HttpRequest({this.method = HttpMethod.get, @required this.path, this.data, this.queryParameters, this.options});
 }
 
 class HttpUtil {

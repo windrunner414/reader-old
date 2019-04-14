@@ -10,7 +10,7 @@ class LocalBookDataSource implements BookDataSource {
     String bookId,
     String source,
   }) {
-
+    throw Exception('not implemented');
   }
 
   @override
@@ -19,7 +19,7 @@ class LocalBookDataSource implements BookDataSource {
     String chapterId,
     String source,
   }) {
-
+    throw Exception('not implemented');
   }
 
   @override

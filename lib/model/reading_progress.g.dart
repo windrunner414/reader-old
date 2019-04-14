@@ -9,10 +9,8 @@ part of 'reading_progress.dart';
 ReadingProgress _$ReadingProgressFromJson(Map<String, dynamic> json) {
   $checkKeys(json,
       requiredKeys: const ['bookId'], disallowNullValues: const ['bookId']);
-  return ReadingProgress(
-      bookId: json['bookId'] as String,
-      chapterIndex: json['chapterIndex'] as int ?? 0,
-      pageIndex: json['pageIndex'] as int ?? 0);
+  return ReadingProgress(json['bookId'] as String,
+      json['chapterIndex'] as int ?? 0, json['pageIndex'] as int ?? 0);
 }
 
 Map<String, dynamic> _$ReadingProgressToJson(ReadingProgress instance) {

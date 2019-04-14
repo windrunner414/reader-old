@@ -2,8 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:crypto/crypto.dart';
 import 'package:encrypt/encrypt.dart';
 import 'dart:convert';
-import '../../helper/helper.dart';
 import 'package:reader/utils/encrypt_util.dart';
+import '../../helper/helper.dart';
 
 void main() {
   test('加密解密带完整性校验', () {

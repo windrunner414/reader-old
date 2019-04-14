@@ -21,7 +21,6 @@ class WorkerUtil {
   }
 }
 
-
 class _AnonymousTask implements Task {
   Function call;
   List positionalArguments;

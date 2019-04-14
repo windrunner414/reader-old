@@ -2,13 +2,10 @@ import 'package:dio/dio.dart' as Dio show CancelToken, DioError;
 
 class TaskCancelToken {
   /// dio cancel token
-  final Dio.CancelToken net;
-
-  TaskCancelToken() :
-        net = Dio.CancelToken();
+  final Dio.CancelToken http = Dio.CancelToken();
 
   void cancel([String msg]) {
-    net.cancel(msg);
+    http.cancel(msg);
   }
 
   static bool isCancel(e) {

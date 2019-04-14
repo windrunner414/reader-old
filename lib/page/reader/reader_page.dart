@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:reader/widget/task_cancel_token_provider.dart';
 import 'package:reader/page/reader/reader.dart';
-import 'package:reader/dao/book_dao.dart';
-import 'package:reader/dao/data_result.dart';
+import 'package:reader/di/di.dart';
+import 'package:reader/repository/book_repository.dart';
 
 class ReaderPage extends StatefulWidget {
   final String bookId;
@@ -14,12 +14,11 @@ class ReaderPage extends StatefulWidget {
 }
 
 class _ReaderPageState extends State<ReaderPage> with TaskCancelTokenProviderStateMixin<ReaderPage> {
-  BookDao _bookDao;
+  BookRepository _bookRepository = inject<BookRepository>();
 
   @override
   void initState() {
     super.initState();
-    _bookDao = BookDao(cancelToken: cancelToken);
   }
 
   @override
@@ -36,14 +35,20 @@ class _ReaderPageState extends State<ReaderPage> with TaskCancelTokenProviderSta
 
       },
       getChapterContent: (String bookId, String id) async {
-        DataResult result = await _bookDao.getChapterContent(bookId, id);
-        if (result.status != DataResultStatus.SUCCESS) return null;
-        return result.data.content;
+        try {
+          return (await _bookRepository.getChapterContent(bookId: bookId, chapterId: id, source: 'zhuidu')).content;
+        } catch (_) {
+          return null;
+        }
       },
       getChapterList: (String id) async {
-        DataResult result = await _bookDao.getChapterList(id);
-        if (result.status != DataResultStatus.SUCCESS) return null;
-        return result.data.chapterList;
+        try {
+          return (await _bookRepository.getChapterList(bookId: id, source: 'zhuidu')).chapterList;
+        } catch (e, s) {
+          print(e);
+          print(s);
+          return null;
+        }
       },
       isCached: (String id) {
         if (id == '1') return true;

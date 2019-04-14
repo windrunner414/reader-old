@@ -4,7 +4,6 @@ import 'package:reader/page/reader/turning/page_turning.dart';
 import 'package:reader/page/reader/pagination.dart';
 import 'package:reader/page/reader/reader_icon.dart';
 import 'package:reader/model/reading_progress.dart';
-import 'package:reader/dao/reader_dao.dart';
 import 'package:reader/utils/time.dart';
 import 'dart:math';
 import 'dart:ui';
@@ -16,9 +15,10 @@ import 'package:battery/battery.dart';
 import 'package:flutter_seekbar/flutter_seekbar.dart';
 import 'package:reader/model/book_chapter_list.dart';
 import 'package:reader/widget/task_cancel_token_provider.dart';
-import 'package:reader/dao/data_result.dart';
 import 'package:reader/model/reader_preferences.dart';
 import 'package:reader/config/reader_config.dart';
+import 'package:reader/di/di.dart';
+import 'package:reader/repository/book_repository.dart';
 
 typedef getChapterContentCallback = Future<String> Function(String bookId, String chapterId);
 typedef getChapterListCallback = Future<List<BookChapterInfo>> Function(String bookId);
@@ -73,12 +73,12 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader>, 
   double _animDistance;
   double _animDistance2;
 
-  ReaderDao _readerDao;
-
   Size _size;
   Size _pageSize;
   bool _inLoading = false;
   bool _loadError = false;
+
+  BookRepository _bookRepository = inject<BookRepository>();
 
   List<BookChapterInfo> _chapterList = [];
   ReadingProgress _readingProgress;
@@ -145,7 +145,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader>, 
   }
 
   void _saveReadProgress() {
-    _readerDao.saveReadingProgress(_readingProgress);
+    _bookRepository.saveReadingProgress(_readingProgress);
   }
 
   void setPreferences(ReaderPreferences pref) {
@@ -164,7 +164,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader>, 
     _preferences = ReaderPreferences.fromJson(currPrefJson);
 
     if (!isInit) {
-      _readerDao.savePreferences(_preferences);
+      //_readerDao.savePreferences(_preferences);
       setState(() => _reCalcPages());
     } else {
       _setFullScreen(_preferences.fullScreen);
@@ -174,22 +174,23 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader>, 
   Future<void> _restoreState() async {
     _showLoading();
 
-    var result = await _readerDao.getReadingProgress(widget.bookId);
-    if (result.status == DataResultStatus.SUCCESS) {
-      _readingProgress = result.data;
-    } else {
+    try {
+      _readingProgress = await _bookRepository.getReadingProgress(widget.bookId);
+    } catch(e, s) {
+      print(e);
+      print(s);
       ToastUtil.show('阅读记录获取失败');
       _readingProgress = ReadingProgress.fromJson({'bookId': widget.bookId});
     }
 
     // must set preferences at end, used to know whether restoreState is complete
-    result = await _readerDao.getPreferences();
-    if (result.status == DataResultStatus.SUCCESS) {
-      setPreferences(result.data);
-    } else {
-      ToastUtil.show('阅读器设置获取失败');
+    //result = await _readerDao.getPreferences();
+    //if (result.status == DataResultStatus.SUCCESS) {
+      //setPreferences(result.data);
+    //} else {
+      //ToastUtil.show('阅读器设置获取失败');
       setPreferences(null);
-    }
+    //}
 
     _hideLoading();
   }
@@ -736,7 +737,6 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader>, 
   @override
   void initState() {
     super.initState();
-    _readerDao = ReaderDao(cancelToken: cancelToken);
     _ticker = createTicker(_onTick);
     _restoreState();
     _updateSystemStatus(null);

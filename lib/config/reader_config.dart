@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:reader/model/reader_preferences.dart';
 
 class ReaderConfig {
+  ReaderConfig._();
+
   /// 缓存小说时的并发请求数
   static int maxDownloadConcurrency = 5;
 

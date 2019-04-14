@@ -3,6 +3,8 @@ import 'package:encrypt/encrypt.dart';
 import 'dart:convert';
 
 class EncryptConfig {
+  EncryptConfig._();
+
   /// HMAC，用于校验章节完整性
   static Hmac bookChapterHMAC = Hmac(sha256, utf8.encode('afeiofuj3892ufjdoafnkmn'));
 

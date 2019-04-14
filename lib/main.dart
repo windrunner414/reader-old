@@ -2,9 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:reader/page/reader/reader_page.dart';
 import 'package:reader/utils/toast_util.dart';
+import 'package:reader/di/di.dart';
+import 'package:reader/di/app_module.dart';
 
-void main() {
+void main() async {
   //SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
+  appModule().then((module) {
+    startDartIn(module);
+  });
+  //print(module);
+  //startDartIn(module);
   runApp(MyApp());
 }
 

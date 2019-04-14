@@ -1,4 +1,14 @@
-part of 'helper.dart';
+import 'dart:math';
+
+var _random = Random();
+
+int getRandomInt(int min, [int max]) {
+  int num = min;
+  if (max != null && max > min) {
+    num += _random.nextInt(max - min);
+  }
+  return num;
+}
 
 String getRandomString(int minLength, {int maxLength, bool chinese = true}) {
   int length = getRandomInt(minLength, maxLength);

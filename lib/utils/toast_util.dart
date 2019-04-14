@@ -27,6 +27,9 @@ class Toast extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return OKToast(child: child);
+    return OKToast(
+      child: child,
+      dismissOtherOnShow: true,
+    );
   }
 }

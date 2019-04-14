@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
 
-class NetConfig {
+class HttpConfig {
+  HttpConfig._();
+
   static BaseOptions options = BaseOptions(
     /// 连接超时时间，单位毫秒
     connectTimeout: 5000,

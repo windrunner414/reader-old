@@ -4,7 +4,7 @@ import 'package:reader/page/reader/turning/page_turning.dart';
 import 'package:reader/page/reader/pagination.dart';
 import 'package:reader/page/reader/reader_icon.dart';
 import 'package:reader/model/reading_progress.dart';
-import 'package:reader/utils/time.dart';
+import 'package:reader/utils/time_util.dart';
 import 'dart:math';
 import 'dart:ui';
 import 'dart:async';
@@ -858,7 +858,7 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader>, 
               ) : Container(),
               SizedBox(width: 5),
               Text(
-                Time.hourMinute,
+                TimeUtil.hourMinute,
                 style: TextStyle(
                   color: _preferences.realFontColor.withOpacity(0.6),
                   fontSize: 12,

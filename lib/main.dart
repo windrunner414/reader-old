@@ -4,14 +4,12 @@ import 'package:reader/page/reader/reader_page.dart';
 import 'package:reader/utils/toast_util.dart';
 import 'package:reader/di/di.dart';
 import 'package:reader/di/app_module.dart';
+import 'package:reader/utils/file_util.dart';
 
 void main() async {
   //SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
-  appModule().then((module) {
-    startDartIn(module);
-  });
-  //print(module);
-  //startDartIn(module);
+  startDartIn(await appModule());
+  await FileUtil.init();
   runApp(MyApp());
 }
 

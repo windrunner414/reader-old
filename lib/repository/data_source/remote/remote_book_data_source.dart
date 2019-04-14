@@ -14,7 +14,7 @@ class RemoteBookDataSource implements BookDataSource {
       source: source,
     );
     Response response = await HttpUtil.request(request);
-    return await WorkerUtil.run(
+    return await WorkerUtil.run<BookChapterList>(
       ApiConfig.parseChapterListResponse,
       namedArguments: {
        #response: response.data as String,
@@ -36,7 +36,7 @@ class RemoteBookDataSource implements BookDataSource {
       source: source,
     );
     Response response = await HttpUtil.request(request);
-    return await WorkerUtil.run(
+    return await WorkerUtil.run<BookChapterContent>(
       ApiConfig.parseChapterContentResponse,
       namedArguments: {
         #response: response.data as String,

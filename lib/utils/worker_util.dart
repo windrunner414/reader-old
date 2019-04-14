@@ -9,11 +9,11 @@ class WorkerUtil {
     spawnLazily: WorkerConfig.taskWorkerSpawnLazily,
   );
 
-  static Future<dynamic> run(Function call, {
+  static Future<T> run<T>(Function call, {
     List positionalArguments,
     Map<Symbol, dynamic> namedArguments,
-  }) {
-    return taskWorker.handle(_AnonymousTask(
+  }) async {
+    return await taskWorker.handle(_AnonymousTask(
       call,
       positionalArguments: positionalArguments,
       namedArguments: namedArguments,

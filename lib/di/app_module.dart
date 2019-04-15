@@ -8,7 +8,7 @@ import 'package:reader/repository/book_repository.dart';
 import 'package:reader/repository/book_repository_impl.dart';
 
 Future<List<Module>> appModule() async {
-  var bookDatabase = await BookDatabase.openDatabase();
+  var bookDatabase = await $FloorBookDatabase.databaseBuilder('book.db').build();
 
   final daoModule = Module([
     single<ReadingProgressDao>(bookDatabase.readingProgressDao),

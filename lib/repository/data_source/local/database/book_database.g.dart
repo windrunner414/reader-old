@@ -6,18 +6,45 @@ part of 'book_database.dart';
 // FloorGenerator
 // **************************************************************************
 
-Future<BookDatabase> _$open([List<Migration> migrations = const []]) async {
-  final database = _$BookDatabase();
-  database.database = await database.open(migrations);
-  return database;
+class $FloorBookDatabase {
+  /// Creates a database builder for a persistent database.
+  /// Once a database is built, you should keep a reference to it and re-use it.
+  static _$BookDatabaseBuilder databaseBuilder(String name) =>
+      _$BookDatabaseBuilder(name);
+
+  /// Creates a database builder for an in memory database.
+  /// Information stored in an in memory database disappears when the process is killed.
+  /// Once a database is built, you should keep a reference to it and re-use it.
+  static _$BookDatabaseBuilder inMemoryDatabaseBuilder() =>
+      _$BookDatabaseBuilder(null);
+}
+
+class _$BookDatabaseBuilder {
+  _$BookDatabaseBuilder(this.name);
+
+  final String name;
+
+  final List<Migration> _migrations = [];
+
+  /// Adds migrations to the builder.
+  _$BookDatabaseBuilder addMigrations(List<Migration> migrations) {
+    _migrations.addAll(migrations);
+    return this;
+  }
+
+  /// Creates the database and initializes it.
+  Future<BookDatabase> build() async {
+    final database = _$BookDatabase();
+    database.database = await database.open(name ?? ':memory:', _migrations);
+    return database;
+  }
 }
 
 class _$BookDatabase extends BookDatabase {
   ReadingProgressDao _readingProgressDaoInstance;
 
-  @override
-  Future<sqflite.Database> open(List<Migration> migrations) async {
-    final path = join(await sqflite.getDatabasesPath(), 'bookdatabase.db');
+  Future<sqflite.Database> open(String name, List<Migration> migrations) async {
+    final path = join(await sqflite.getDatabasesPath(), name);
 
     return sqflite.openDatabase(
       path,
@@ -70,9 +97,8 @@ class _$ReadingProgressDao extends ReadingProgressDao {
 
   @override
   Future<ReadingProgress> findByBookId(String bookId) async {
-    return _queryAdapter.query(
-        'select * from ReadingProgress where bookId = $bookId',
-        _readingProgressMapper);
+    return _queryAdapter.query('select * from ReadingProgress where bookId = ?',
+        arguments: <dynamic>[bookId], mapper: _readingProgressMapper);
   }
 
   @override

@@ -71,7 +71,7 @@ class _$ReadingProgressDao extends ReadingProgressDao {
   @override
   Future<ReadingProgress> findByBookId(String bookId) async {
     return _queryAdapter.query(
-        'select * from ReadingProgress where bookId = "$bookId"',
+        'select * from ReadingProgress where bookId = $bookId',
         _readingProgressMapper);
   }
 

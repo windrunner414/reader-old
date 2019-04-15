@@ -26,7 +26,7 @@ dependencies:
   flutter_opencc: ^0.0.1
   json_annotation: ^2.1.0
   dartin: ^0.1.2
-  floor: ^0.3.0
+  floor: ^0.4.0
   flutter_seekbar:
     git: https://github.com/windrunner414/flutter_seekbar
 

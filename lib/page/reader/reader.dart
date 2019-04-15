@@ -176,6 +176,9 @@ class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader>, 
 
     try {
       _readingProgress = await _bookRepository.getReadingProgress(widget.bookId);
+      if (_readingProgress == null) {
+        _readingProgress = ReadingProgress(widget.bookId, 0, 0);
+      }
     } catch(e, s) {
       print(e);
       print(s);

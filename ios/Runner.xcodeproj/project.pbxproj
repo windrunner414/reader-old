@@ -89,7 +89,6 @@
 				12905FD2CCCA9A942781F934 /* Pods-Runner.release.xcconfig */,
 				1C3FDC0EA14B2434F9BD2371 /* Pods-Runner.profile.xcconfig */,
 			);
-			name = Pods;
 			path = Pods;
 			sourceTree = "<group>";
 		};
@@ -164,6 +163,7 @@
 				9705A1C41CF9048500538489 /* Embed Frameworks */,
 				3B06AD1E1E4923F5004D2608 /* Thin Binary */,
 				8C893F6E0B747D5B13D98F4F /* [CP] Embed Pods Frameworks */,
+				9C621D016C2739533505C1B9 /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -185,6 +185,7 @@
 				TargetAttributes = {
 					97C146ED1CF9000F007C117D = {
 						CreatedOnToolsVersion = 7.3.1;
+						DevelopmentTeam = UTRMZ37JFA;
 					};
 				};
 			};
@@ -245,7 +246,7 @@
 			);
 			inputPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-frameworks.sh",
-				"${PODS_ROOT}/../.symlinks/flutter/ios/Flutter.framework",
+				"${PODS_ROOT}/../.symlinks/flutter/ios-profile/Flutter.framework",
 			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
@@ -271,6 +272,72 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "/bin/sh \"$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh\" build";
+		};
+		9C621D016C2739533505C1B9 /* [CP] Copy Pods Resources */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-resources.sh",
+				"${PODS_ROOT}/../.symlinks/plugins/flutter_opencc/ios/OpenCC/data/dictionary/HKVariants.txt",
+				"${PODS_ROOT}/../.symlinks/plugins/flutter_opencc/ios/OpenCC/data/dictionary/HKVariantsPhrases.txt",
+				"${PODS_ROOT}/../.symlinks/plugins/flutter_opencc/ios/OpenCC/data/dictionary/HKVariantsRevPhrases.txt",
+				"${PODS_ROOT}/../.symlinks/plugins/flutter_opencc/ios/OpenCC/data/dictionary/JPVariants.txt",
+				"${PODS_ROOT}/../.symlinks/plugins/flutter_opencc/ios/OpenCC/data/dictionary/STCharacters.txt",
+				"${PODS_ROOT}/../.symlinks/plugins/flutter_opencc/ios/OpenCC/data/dictionary/STPhrases.txt",
+				"${PODS_ROOT}/../.symlinks/plugins/flutter_opencc/ios/OpenCC/data/dictionary/TSCharacters.txt",
+				"${PODS_ROOT}/../.symlinks/plugins/flutter_opencc/ios/OpenCC/data/dictionary/TSPhrases.txt",
+				"${PODS_ROOT}/../.symlinks/plugins/flutter_opencc/ios/OpenCC/data/dictionary/TWPhrasesIT.txt",
+				"${PODS_ROOT}/../.symlinks/plugins/flutter_opencc/ios/OpenCC/data/dictionary/TWPhrasesName.txt",
+				"${PODS_ROOT}/../.symlinks/plugins/flutter_opencc/ios/OpenCC/data/dictionary/TWPhrasesOther.txt",
+				"${PODS_ROOT}/../.symlinks/plugins/flutter_opencc/ios/OpenCC/data/dictionary/TWVariants.txt",
+				"${PODS_ROOT}/../.symlinks/plugins/flutter_opencc/ios/OpenCC/data/dictionary/TWVariantsRevPhrases.txt",
+				"${PODS_ROOT}/../.symlinks/plugins/flutter_opencc/ios/OpenCC/iOS/config/hk2s.json",
+				"${PODS_ROOT}/../.symlinks/plugins/flutter_opencc/ios/OpenCC/iOS/config/s2hk.json",
+				"${PODS_ROOT}/../.symlinks/plugins/flutter_opencc/ios/OpenCC/iOS/config/s2t.json",
+				"${PODS_ROOT}/../.symlinks/plugins/flutter_opencc/ios/OpenCC/iOS/config/s2tw.json",
+				"${PODS_ROOT}/../.symlinks/plugins/flutter_opencc/ios/OpenCC/iOS/config/s2twp.json",
+				"${PODS_ROOT}/../.symlinks/plugins/flutter_opencc/ios/OpenCC/iOS/config/t2hk.json",
+				"${PODS_ROOT}/../.symlinks/plugins/flutter_opencc/ios/OpenCC/iOS/config/t2s.json",
+				"${PODS_ROOT}/../.symlinks/plugins/flutter_opencc/ios/OpenCC/iOS/config/t2tw.json",
+				"${PODS_ROOT}/../.symlinks/plugins/flutter_opencc/ios/OpenCC/iOS/config/tw2s.json",
+				"${PODS_ROOT}/../.symlinks/plugins/flutter_opencc/ios/OpenCC/iOS/config/tw2sp.json",
+			);
+			name = "[CP] Copy Pods Resources";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/HKVariants.txt",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/HKVariantsPhrases.txt",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/HKVariantsRevPhrases.txt",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/JPVariants.txt",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/STCharacters.txt",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/STPhrases.txt",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/TSCharacters.txt",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/TSPhrases.txt",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/TWPhrasesIT.txt",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/TWPhrasesName.txt",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/TWPhrasesOther.txt",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/TWVariants.txt",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/TWVariantsRevPhrases.txt",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/hk2s.json",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/s2hk.json",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/s2t.json",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/s2tw.json",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/s2twp.json",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/t2hk.json",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/t2s.json",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/t2tw.json",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/tw2s.json",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/tw2sp.json",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-resources.sh\"\n";
+			showEnvVarsInLog = 0;
 		};
 		F432A9746D0F53E1F2BE7AC3 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -383,7 +450,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
-				DEVELOPMENT_TEAM = S8QB4VV633;
+				DEVELOPMENT_TEAM = UTRMZ37JFA;
 				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -395,7 +462,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Flutter",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.windrunner414.reader;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.windrunner414.book-reader";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				VERSIONING_SYSTEM = "apple-generic";
 			};
@@ -509,6 +576,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
+				DEVELOPMENT_TEAM = UTRMZ37JFA;
 				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -520,7 +588,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Flutter",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.windrunner414.reader;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.windrunner414.book-reader";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				VERSIONING_SYSTEM = "apple-generic";
 			};
@@ -532,6 +600,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
+				DEVELOPMENT_TEAM = UTRMZ37JFA;
 				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -543,7 +612,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Flutter",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.windrunner414.reader;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.windrunner414.book-reader";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				VERSIONING_SYSTEM = "apple-generic";
 			};

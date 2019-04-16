@@ -14,7 +14,6 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:battery/battery.dart';
 import 'package:flutter_seekbar/flutter_seekbar.dart';
 import 'package:reader/model/book_chapter_list.dart';
-import 'package:reader/widget/task_cancel_token_provider.dart';
 import 'package:reader/model/reader_preferences.dart';
 import 'package:reader/config/reader_config.dart';
 import 'package:reader/di/di.dart';
@@ -61,7 +60,7 @@ class Reader extends StatefulWidget {
 
 typedef _layerBuilder = Widget Function();
 
-class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader>, TaskCancelTokenProviderStateMixin<Reader> {
+class _ReaderState extends State<Reader> with TickerProviderStateMixin<Reader> {
   ReaderPreferences _preferences;
   ReaderPreferences get preferences => _preferences;
 

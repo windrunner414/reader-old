@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
 import 'package:reader/config/http_config.dart';
-import 'task_cancel_token.dart';
 import 'package:meta/meta.dart';
 
 export 'package:dio/dio.dart';
@@ -34,7 +33,7 @@ class HttpUtil {
 
   static Future<Response<T>> request<T>(
     HttpRequest request, {
-    TaskCancelToken cancelToken,
+    CancelToken cancelToken,
     ProgressCallback onSendProgress,
     ProgressCallback onReceiveProgress,
   }) {
@@ -46,7 +45,7 @@ class HttpUtil {
       data: request.data,
       queryParameters: request.queryParameters,
       options: options,
-      cancelToken: cancelToken?.http,
+      cancelToken: cancelToken,
       onSendProgress: onSendProgress,
       onReceiveProgress: onReceiveProgress,
     );

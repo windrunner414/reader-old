@@ -6,12 +6,18 @@ import 'package:reader/repository/data_source/local/local_book_data_source.dart'
 import 'package:reader/repository/data_source/remote/remote_book_data_source.dart';
 import 'package:reader/repository/book_repository.dart';
 import 'package:reader/repository/book_repository_impl.dart';
+import 'package:reader/repository/data_source/remote/api/book_api.dart';
+import 'package:reader/repository/data_source/remote/api/book_api_impl.dart';
 
 Future<List<Module>> appModule() async {
   var bookDatabase = await $FloorBookDatabase.databaseBuilder('book.db').build();
 
   final daoModule = Module([
     single<ReadingProgressDao>(bookDatabase.readingProgressDao),
+  ]);
+
+  final apiModule = Module([
+    lazy<BookApi>(({params}) => BookApiImpl()),
   ]);
 
   final dataSourceModule = Module([])
@@ -26,5 +32,5 @@ Future<List<Module>> appModule() async {
     lazy<BookRepository>(({params}) => BookRepositoryImpl()),
   ]);
 
-  return [daoModule, dataSourceModule, repositoryModule];
+  return [daoModule, apiModule, dataSourceModule, repositoryModule];
 }

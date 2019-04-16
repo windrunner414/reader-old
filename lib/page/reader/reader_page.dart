@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:reader/widget/task_cancel_token_provider.dart';
 import 'package:reader/page/reader/reader.dart';
 import 'package:reader/di/di.dart';
 import 'package:reader/repository/book_repository.dart';
@@ -13,7 +12,7 @@ class ReaderPage extends StatefulWidget {
   _ReaderPageState createState() => _ReaderPageState();
 }
 
-class _ReaderPageState extends State<ReaderPage> with TaskCancelTokenProviderStateMixin<ReaderPage> {
+class _ReaderPageState extends State<ReaderPage> {
   BookRepository _bookRepository = inject<BookRepository>();
 
   @override

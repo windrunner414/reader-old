@@ -1,4 +1,4 @@
-import 'rule/rule.dart';
+import 'package:reader/config/rule/rule.dart';
 import 'package:reader/utils/http_util.dart';
 import 'package:reader/model/book_chapter_list.dart';
 import 'package:reader/model/book_chapter_content.dart';
@@ -8,8 +8,8 @@ import 'package:meta/meta.dart';
 /// 所有parse方法均会在isolate（taskWorker）中执行，防止阻塞UI线程
 /// isolate存在一些限制，比如不能使用method channel（无法调用原生方法，插件无法使用）
 /// 传递给isolate的数据也有限制，比如无法传递闭包
-class ApiConfig {
-  ApiConfig._();
+class BookApiConfig {
+  BookApiConfig._();
 
   /// 根据源来选择规则
   static Rule _getRuleBySource(String source) {
@@ -22,11 +22,13 @@ class ApiConfig {
   }
 
   /// 构造源列表请求
+  /// 这里可以直接返回null，若为null则不会进行请求而是直接调用parseSourceListResponse
   static Future<HttpRequest> makeSourceListRequest({@required String bookId}) async {
-
+    return null;
   }
 
   /// 解析源列表响应
+  /// 若makeSourceListRequest返回null，response参数将为null
   /// 若未使用支持热更新的规则方案，建议在此过滤掉不支持的规则
   static Future<List<String>> parseSourceListResponse({
     @required String response,

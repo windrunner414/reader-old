@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:reader/page/reader/reader_page.dart';
+import 'package:reader/ui/page/reader/reader_page.dart';
 import 'package:reader/utils/toast_util.dart';
 import 'package:reader/di/di.dart';
 import 'package:reader/di/app_module.dart';

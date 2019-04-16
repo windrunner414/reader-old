@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:reader/page/reader/turning/page_turning.dart';
-import 'package:reader/page/reader/pagination.dart';
-import 'package:reader/page/reader/reader_icon.dart';
+import 'package:reader/ui/page/reader/turning/page_turning.dart';
+import 'package:reader/ui/page/reader/pagination.dart';
+import 'package:reader/ui/page/reader/reader_icon.dart';
 import 'package:reader/model/reading_progress.dart';
 import 'package:reader/utils/time_util.dart';
 import 'dart:math';

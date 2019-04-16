@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'dart:math';
-import 'package:reader/page/reader/turning/page_turning.dart';
+import 'page_turning.dart';
 
 enum _AnimType {
   LEFT,

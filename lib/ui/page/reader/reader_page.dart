@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:reader/page/reader/reader.dart';
+import 'package:reader/ui/page/reader/reader.dart';
 import 'package:reader/di/di.dart';
 import 'package:reader/repository/book_repository.dart';
 

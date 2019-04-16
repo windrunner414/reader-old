@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:reader/page/reader/turning/page_turning.dart';
+import 'page_turning.dart';
 import 'dart:ui';
 
 class CoveragePageTurningPainter extends PageTurningPainter {
